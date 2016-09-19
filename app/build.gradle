@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+ext {
+    supportLibraryVersion = '24.1.1';
+}
+
 android {
     compileSdkVersion 24
     buildToolsVersion "24.0.0"
@@ -19,8 +23,13 @@ android {
     }
 }
 
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:24.1.1'
+    compile "com.android.support:appcompat-v7:${supportLibraryVersion}"
+    compile "com.android.support:support-v4:${supportLibraryVersion}"
+    compile "com.android.support:design:${supportLibraryVersion}"
+    compile 'com.p_v:flexiblecalendar:1.2.1'
+    compile 'com.jakewharton:butterknife:7.0.1'
 }
