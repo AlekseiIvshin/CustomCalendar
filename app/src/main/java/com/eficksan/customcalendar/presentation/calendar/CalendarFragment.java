@@ -71,6 +71,7 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
         super.onCreate(savedInstanceState);
         ((App)getActivity().getApplication()).plusCalendarScreenComponent().inject(this);
         mPresenter.takeRouter((Router) getActivity());
+        mPresenter.setTargetCalendarName("eficksan@gmail.com");
         mPresenter.onCreate(savedInstanceState);
 
     }
@@ -119,7 +120,8 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
     }
 
     private void fetchCalendars() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && PERMISSION_GRANTED != getActivity().checkSelfPermission(WRITE_CALENDAR)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && PERMISSION_GRANTED != getActivity().checkSelfPermission(WRITE_CALENDAR)) {
             requestPermissions(new String[]{WRITE_CALENDAR}, CALENDAR_PERMISSION);
         } else {
             getLoaderManager().initLoader(CALENDAR_FETCHING_LOADER_ID, null, this);

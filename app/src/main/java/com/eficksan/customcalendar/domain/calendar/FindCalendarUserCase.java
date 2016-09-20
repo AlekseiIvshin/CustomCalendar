@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.provider.CalendarContract;
+import android.provider.CalendarContract.Calendars;
 import android.support.v4.app.ActivityCompat;
 
 import com.eficksan.customcalendar.data.calendar.CalendarEntity;
@@ -34,27 +34,24 @@ public class FindCalendarUserCase extends BaseUseCase<String, CalendarEntity> {
         return Observable.just(calendarName)
                 .map(new Func1<String, Cursor>() {
                     @Override
-                    public Cursor call(String s) {
+                    public Cursor call(String calendarName) {
                         if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
                             throw new SecurityException("Permissions required: " + Manifest.permission.READ_CALENDAR);
                         }
-                        Uri uri = CalendarContract.Calendars.CONTENT_URI;
-                        String selection = String.format("(%s = ?)", CalendarContract.Calendars.NAME);
-                        String[] selectionArgs = new String[]{"eficksan@gmail.com"};
-                        String[] projection = new String[]{CalendarContract.Calendars._ID, CalendarContract.Calendars.NAME};
+                        Uri uri = Calendars.CONTENT_URI;
+                        String selection = String.format("(%s = ?)", Calendars.NAME);
+                        String[] selectionArgs = new String[]{calendarName};
+                        String[] projection = new String[]{Calendars._ID, Calendars.NAME};
                         return mContext.getContentResolver().query(uri, projection, selection, selectionArgs, null);
-                    }
-                })
-                .takeUntil(new Func1<Cursor, Boolean>() {
-                    @Override
-                    public Boolean call(Cursor cursor) {
-                        return cursor != null && cursor.moveToNext();
                     }
                 })
                 .map(new Func1<Cursor, CalendarEntity>() {
                     @Override
                     public CalendarEntity call(Cursor cursor) {
-                        return CalendarEntityMapper.mapToObject(cursor);
+                        if (cursor != null && cursor.moveToFirst()) {
+                            return CalendarEntityMapper.mapToObject(cursor);
+                        }
+                        return null;
                     }
                 });
     }

@@ -13,4 +13,12 @@ public class CalendarEntity {
         this.id = id;
         this.displayName = displayName;
     }
+
+    @Override
+    public String toString() {
+        return "CalendarEntity{" +
+                "id=" + id +
+                ", displayName='" + displayName + '\'' +
+                '}';
+    }
 }

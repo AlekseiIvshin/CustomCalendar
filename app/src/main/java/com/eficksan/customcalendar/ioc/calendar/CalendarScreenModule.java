@@ -16,6 +16,6 @@ public class CalendarScreenModule {
     @Provides
     @CalendarScreenScope
     public CalendarPresenter provideCalendarPresenter(FindCalendarUserCase findCalendarUserCase) {
-        return new CalendarPresenter(findCalendarUserCase);
+        return new CalendarPresenter(findCalendarUserCase, mFetchEventsUserCase);
     }
 }
