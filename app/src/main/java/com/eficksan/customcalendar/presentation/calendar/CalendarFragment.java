@@ -16,13 +16,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.eficksan.customcalendar.App;
 import com.eficksan.customcalendar.R;
 import com.eficksan.customcalendar.data.calendar.CalendarEntity;
 import com.eficksan.customcalendar.data.calendar.CalendarEntityMapper;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.data.calendar.EventEntityMapper;
+import com.eficksan.customcalendar.domain.routing.Router;
 import com.eficksan.customcalendar.ioc.calendar.CalendarScreenComponent;
-import com.eficksan.customcalendar.presentation.common.ComponentLifeCycleDelegate;
 import com.p_v.flexiblecalendar.FlexibleCalendarView;
 import com.p_v.flexiblecalendar.entity.Event;
 
@@ -32,13 +33,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import javax.inject.Inject;
+
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import rx.Observable;
 
 import static android.Manifest.permission.WRITE_CALENDAR;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
-public class CalendarFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,ComponentLifeCycleDelegate.ComponentProvider<CalendarScreenComponent> {
+public class CalendarFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,ICalendarView {
     public static final String TAG = CalendarFragment.class.getSimpleName();
     private static final int CALENDAR_PERMISSION = 42;
 
@@ -49,7 +53,8 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
     @Bind(R.id.calendar)
     FlexibleCalendarView mCalendarView;
 
-    private ComponentLifeCycleDelegate<ICalendarView, CalendarPresenter, CalendarScreenComponent> lifeCycleDelegate;
+    @Inject
+    CalendarPresenter mPresenter;
 
     public CalendarFragment() {
         // Required empty public constructor
@@ -64,7 +69,10 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        lifeCycleDelegate = new ComponentLifeCycleDelegate<>(this);
+        ((App)getActivity().getApplication()).plusCalendarScreenComponent().inject(this);
+        mPresenter.takeRouter((Router) getActivity());
+        mPresenter.onCreate(savedInstanceState);
+
     }
 
     @Override
@@ -77,8 +85,11 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         ButterKnife.bind(this, view);
+
+        mPresenter.onViewCreated(this);
+
+
 
         fetchCalendars();
 
@@ -90,6 +101,21 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
                 return eventColorList;
             }
         });
+    }
+
+    @Override
+    public void onDestroyView() {
+        mPresenter.onViewDestroyed();
+        ButterKnife.unbind(this);
+        super.onDestroyView();
+    }
+
+    @Override
+    public void onDestroy() {
+        mPresenter.releaseRouter();
+        mPresenter.onDestroy();
+        ((App)getActivity().getApplication()).removeCalendarScreenComponent();
+        super.onDestroy();
     }
 
     private void fetchCalendars() {
@@ -184,13 +210,18 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
     }
 
     @Override
-    public CalendarScreenComponent onSetUpComponent() {
+    public void showMonth(int monthNumber, ArrayList<EventEntity> events) {
+
+    }
+
+    @Override
+    public Observable<DateTime> getSelectedDateTimeChanges() {
         return null;
     }
 
     @Override
-    public void onKillComponent() {
-
+    public Observable<DateTime> getShownMonthChanges() {
+        return null;
     }
 
     private class MyEvent implements Event {

@@ -7,7 +7,7 @@ import com.eficksan.customcalendar.domain.routing.Router;
 /**
  * Created by Aleksei_Ivshin on 9/20/16.
  */
-public abstract class BasePresenter<VIEW_TYPE extends IView> implements IPresenter<VIEW_TYPE> {
+public abstract class BasePresenter<VIEW_TYPE> implements IPresenter<VIEW_TYPE> {
 
     protected Router mRouter;
     protected VIEW_TYPE mView;

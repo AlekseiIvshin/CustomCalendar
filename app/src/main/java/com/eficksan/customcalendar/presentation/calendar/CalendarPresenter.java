@@ -1,14 +1,18 @@
 package com.eficksan.customcalendar.presentation.calendar;
 
 import android.os.Bundle;
+import android.util.Log;
 
+import com.eficksan.customcalendar.data.calendar.CalendarEntity;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
+import com.eficksan.customcalendar.domain.calendar.FindCalendarUserCase;
 import com.eficksan.customcalendar.presentation.common.BasePresenter;
 
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
 
+import rx.Subscriber;
 import rx.functions.Action1;
 import rx.subscriptions.CompositeSubscription;
 
@@ -16,10 +20,22 @@ import rx.subscriptions.CompositeSubscription;
  * Created by Aleksei_Ivshin on 9/20/16.
  */
 public class CalendarPresenter extends BasePresenter<ICalendarView> {
+    private static final String TAG = CalendarPresenter.class.getSimpleName();
 
     private static final String EXTRA_LAST_SHOW_DATE = "EXTRA_LAST_SHOW_DATE";
     private DateTime mTargetDate;
     private CompositeSubscription mViewEventsSubscription;
+
+    private final FindCalendarUserCase mFindCalendarUserCase;
+    private String mTargetCalendarName;
+
+    public CalendarPresenter(FindCalendarUserCase findCalendarUserCase) {
+        this.mFindCalendarUserCase = findCalendarUserCase;
+    }
+
+    public void setTargetCalendarName(String targetCalendarName) {
+        this.mTargetCalendarName = targetCalendarName;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceStates) {
@@ -36,6 +52,8 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> {
     @Override
     public void onViewCreated(ICalendarView view) {
         super.onViewCreated(view);
+
+        mFindCalendarUserCase.execute(mTargetCalendarName, new FoundCalendarSubscriber());
 
         mViewEventsSubscription = new CompositeSubscription();
 
@@ -73,5 +91,32 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> {
         mViewEventsSubscription.clear();
         mViewEventsSubscription = null;
         super.onViewDestroyed();
+    }
+
+    @Override
+    public void onDestroy() {
+        mFindCalendarUserCase.unsubscribe();
+        super.onDestroy();
+    }
+
+    private class FoundCalendarSubscriber extends Subscriber<CalendarEntity> {
+
+        @Override
+        public void onCompleted() {
+            Log.v(TAG, "There are not any calendars");
+            mFindCalendarUserCase.unsubscribe();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            Log.e(TAG, e.getMessage(), e);
+            // TODO: handle permission required
+            mFindCalendarUserCase.unsubscribe();
+        }
+
+        @Override
+        public void onNext(CalendarEntity calendarEntity) {
+            Log.v(TAG, "Found calendar: " + calendarEntity);
+        }
     }
 }

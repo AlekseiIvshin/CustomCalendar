@@ -1,5 +1,6 @@
 package com.eficksan.customcalendar.ioc.calendar;
 
+import com.eficksan.customcalendar.domain.calendar.FindCalendarUserCase;
 import com.eficksan.customcalendar.presentation.calendar.CalendarPresenter;
 
 import dagger.Module;
@@ -10,11 +11,11 @@ import dagger.Provides;
  */
 
 @Module
-public class CalendarModule {
+public class CalendarScreenModule {
 
     @Provides
     @CalendarScreenScope
-    public CalendarPresenter provideCalendarPresenter() {
-        return new CalendarPresenter();
+    public CalendarPresenter provideCalendarPresenter(FindCalendarUserCase findCalendarUserCase) {
+        return new CalendarPresenter(findCalendarUserCase);
     }
 }

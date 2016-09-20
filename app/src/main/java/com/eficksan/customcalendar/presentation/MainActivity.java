@@ -5,9 +5,10 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 
 import com.eficksan.customcalendar.R;
+import com.eficksan.customcalendar.domain.routing.Router;
 import com.eficksan.customcalendar.presentation.calendar.CalendarFragment;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Router {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

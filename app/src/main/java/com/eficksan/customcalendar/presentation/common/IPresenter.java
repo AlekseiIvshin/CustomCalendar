@@ -7,7 +7,7 @@ import com.eficksan.customcalendar.domain.routing.Router;
 /**
  * Created by Aleksei_Ivshin on 9/20/16.
  */
-public interface IPresenter<VIEW_TYPE extends IView> {
+public interface IPresenter<VIEW_TYPE> {
 
     void onCreate(Bundle savedInstanceStates);
 

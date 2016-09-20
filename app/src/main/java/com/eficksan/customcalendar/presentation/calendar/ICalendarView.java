@@ -1,7 +1,6 @@
 package com.eficksan.customcalendar.presentation.calendar;
 
 import com.eficksan.customcalendar.data.calendar.EventEntity;
-import com.eficksan.customcalendar.presentation.common.IView;
 
 import org.joda.time.DateTime;
 
