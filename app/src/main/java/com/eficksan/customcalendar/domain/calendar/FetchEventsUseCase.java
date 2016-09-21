@@ -26,10 +26,12 @@ public class FetchEventsUseCase extends BaseUseCase<EventsRequest, EventEntity> 
 
     private static final String TAG = FetchEventsUseCase.class.getSimpleName();
     private final Context mContext;
+    private final EventEntityMapper mapper;
 
-    public FetchEventsUseCase(Context context, Scheduler uiScheduler, Scheduler jobScheduler) {
+    public FetchEventsUseCase(Context context, EventEntityMapper mapper, Scheduler uiScheduler, Scheduler jobScheduler) {
         super(jobScheduler, uiScheduler);
         mContext = context;
+        this.mapper = mapper;
     }
 
     @Override
@@ -64,11 +66,8 @@ public class FetchEventsUseCase extends BaseUseCase<EventsRequest, EventEntity> 
                     Cursor cursor = mContext.getContentResolver().query(uri, projection, selection, selectionArgs, null);
 
                     if (cursor != null) {
-                        EventEntity eventEntity;
                         while (cursor.moveToNext()) {
-                            eventEntity = EventEntityMapper.mapToObject(cursor);
-                            Log.v(TAG, "Found entity: " + eventEntity.toString());
-                            subscriber.onNext(eventEntity);
+                            subscriber.onNext(mapper.mapToObject(cursor));
                         }
                     }
                     subscriber.onCompleted();

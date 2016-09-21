@@ -8,8 +8,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.CalendarContract;
 
-import com.eficksan.customcalendar.data.calendar.CalendarEntity;
-import com.eficksan.customcalendar.data.calendar.CalendarEntityMapper;
+import com.eficksan.customcalendar.data.calendar.EventEntity;
+import com.eficksan.customcalendar.data.calendar.EventEntityMapper;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
 
 import org.junit.After;
@@ -27,8 +27,6 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,22 +37,24 @@ import static org.mockito.Mockito.when;
  * on 21.09.2016.
  */
 
-public class FindCalendarUserCaseTest {
+public class FetchEventsUserCaseTest {
 
-    FindCalendarUserCase useCase;
+    public static final EventEntity EVENT_ENTITY = new EventEntity(1, 1, "", "", "", 1, 1);
+    FetchEventsUseCase useCase;
     private Context mockContext;
     Scheduler scheduler = Schedulers.immediate();
-    CalendarEntityMapper mockMapper;
-    public static final String STUB_CALENDAR_NAME = "stub calendar name";
-    public static final CalendarEntity CALENDAR_ENTITY = new CalendarEntity(1, STUB_CALENDAR_NAME);
+    EventEntityMapper mockMapper;
+    public static final int STUB_CALENDAR_ID = 1;
+    EventsRequest mockEventRequest;
 
     @Before
     public void setUp() {
-        mockMapper = mock(CalendarEntityMapper.class);
-        when(mockMapper.mapToObject(any(Cursor.class)))
-                .thenReturn(CALENDAR_ENTITY);
+        mockEventRequest = mock(EventsRequest.class);
+        mockMapper = mock(EventEntityMapper.class);
         mockContext = mock(Context.class);
-        useCase = new FindCalendarUserCase(mockContext, mockMapper, scheduler, scheduler);
+        when(mockMapper.mapToObject(any(Cursor.class)))
+                .thenReturn(EVENT_ENTITY);
+        useCase = new FetchEventsUseCase(mockContext, mockMapper, scheduler, scheduler);
     }
 
     @After
@@ -70,7 +70,9 @@ public class FindCalendarUserCaseTest {
 
         ContentResolver mockContentResolver = mock(ContentResolver.class);
         Cursor mockCursor = mock(Cursor.class);
-        when(mockCursor.moveToFirst()).thenReturn(true);
+        when(mockCursor.moveToNext())
+                .thenReturn(true)
+                .thenReturn(false);
         when(mockContentResolver.query(
                 any(Uri.class),
                 any(String[].class),
@@ -80,17 +82,107 @@ public class FindCalendarUserCaseTest {
                 .thenReturn(mockCursor);
         when(mockContext.getContentResolver()).thenReturn(mockContentResolver);
 
-        TestSubscriber<CalendarEntity> testSubscriber = new TestSubscriber<>();
+        TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
 
-        final Uri expectedUri = CalendarContract.Calendars.CONTENT_URI;
-        final String expectedSelection = String.format("(%s = ?)", CalendarContract.Calendars.NAME);
-        final String[] expectedProjection = new String[]{
-                CalendarContract.Calendars._ID,
-                CalendarContract.Calendars.NAME};
-        final String[] expectedSelectionArgs = new String[]{STUB_CALENDAR_NAME};
+        Uri expectedUri = CalendarContract.Events.CONTENT_URI;
+        String expectedSelection = String.format("(%s = ?) AND (%s >= ?) AND (%s < ?)",
+                CalendarContract.Events.CALENDAR_ID,
+                CalendarContract.Events.DTSTART,
+                CalendarContract.Events.DTEND);
+        String[] expectedProjection = new String[]{
+                CalendarContract.Events._ID,
+                CalendarContract.Events.CALENDAR_ID,
+                CalendarContract.Events.TITLE,
+                CalendarContract.Events.DESCRIPTION,
+                CalendarContract.Events.EVENT_LOCATION,
+                CalendarContract.Events.DTSTART,
+                CalendarContract.Events.DTEND
+        };
+
+        when(mockEventRequest.calendarId())
+                .thenReturn(1L);
+        when(mockEventRequest.fromDate())
+                .thenReturn(1L);
+        when(mockEventRequest.toDate())
+                .thenReturn(1L);
+
+        String[] expectedSelectionArgs = new String[]{
+                String.valueOf(1L),
+                String.valueOf(1L),
+                String.valueOf(1L)
+        };
 
         // When
-        useCase.execute(STUB_CALENDAR_NAME, testSubscriber);
+        useCase.execute(mockEventRequest, testSubscriber);
+
+        // Then
+        verify(mockCursor, times(2)).moveToNext();
+        verify(mockContext, times(1))
+                .checkPermission(anyString(), anyInt(), anyInt());
+        verify(mockContentResolver, times(1)).query(
+                expectedUri,
+                expectedProjection,
+                expectedSelection,
+                expectedSelectionArgs,
+                null);
+        testSubscriber.assertCompleted();
+        assertThat(testSubscriber.getOnNextEvents().get(0), is(EVENT_ENTITY));
+    }
+
+    @Test
+    public void wshouldHandleMultiplyEvents() {
+        // Given
+        when(mockContext.checkPermission(anyString(), anyInt(), anyInt()))
+                .thenReturn(PackageManager.PERMISSION_GRANTED);
+
+        ContentResolver mockContentResolver = mock(ContentResolver.class);
+        Cursor mockCursor = mock(Cursor.class);
+        when(mockCursor.moveToNext())
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(false);
+        when(mockContentResolver.query(
+                any(Uri.class),
+                any(String[].class),
+                anyString(),
+                any(String[].class),
+                anyString()))
+                .thenReturn(mockCursor);
+        when(mockContext.getContentResolver()).thenReturn(mockContentResolver);
+
+        TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
+
+        Uri expectedUri = CalendarContract.Events.CONTENT_URI;
+        String expectedSelection = String.format("(%s = ?) AND (%s >= ?) AND (%s < ?)",
+                CalendarContract.Events.CALENDAR_ID,
+                CalendarContract.Events.DTSTART,
+                CalendarContract.Events.DTEND);
+        String[] expectedProjection = new String[]{
+                CalendarContract.Events._ID,
+                CalendarContract.Events.CALENDAR_ID,
+                CalendarContract.Events.TITLE,
+                CalendarContract.Events.DESCRIPTION,
+                CalendarContract.Events.EVENT_LOCATION,
+                CalendarContract.Events.DTSTART,
+                CalendarContract.Events.DTEND
+        };
+
+        when(mockEventRequest.calendarId())
+                .thenReturn(1L);
+        when(mockEventRequest.fromDate())
+                .thenReturn(1L);
+        when(mockEventRequest.toDate())
+                .thenReturn(1L);
+
+        String[] expectedSelectionArgs = new String[]{
+                String.valueOf(1L),
+                String.valueOf(1L),
+                String.valueOf(1L)
+        };
+
+        // When
+        useCase.execute(mockEventRequest, testSubscriber);
 
         // Then
         verify(mockContext, times(1))
@@ -101,8 +193,9 @@ public class FindCalendarUserCaseTest {
                 expectedSelection,
                 expectedSelectionArgs,
                 null);
+        verify(mockCursor, times(4)).moveToNext();
         testSubscriber.assertCompleted();
-        assertThat(testSubscriber.getOnNextEvents().get(0), is(CALENDAR_ENTITY));
+        assertThat(testSubscriber.getOnNextEvents().size(), is(3));
     }
 
     @Test
@@ -113,7 +206,7 @@ public class FindCalendarUserCaseTest {
 
         ContentResolver mockContentResolver = mock(ContentResolver.class);
         Cursor mockCursor = mock(Cursor.class);
-        when(mockCursor.moveToFirst()).thenReturn(false);
+        when(mockCursor.moveToNext()).thenReturn(false);
         when(mockContentResolver.query(
                 any(Uri.class),
                 any(String[].class),
@@ -123,27 +216,14 @@ public class FindCalendarUserCaseTest {
                 .thenReturn(mockCursor);
         when(mockContext.getContentResolver()).thenReturn(mockContentResolver);
 
-        TestSubscriber<CalendarEntity> testSubscriber = new TestSubscriber<>();
-
-        final Uri expectedUri = CalendarContract.Calendars.CONTENT_URI;
-        final String expectedSelection = String.format("(%s = ?)", CalendarContract.Calendars.NAME);
-        final String[] expectedProjection = new String[]{
-                CalendarContract.Calendars._ID,
-                CalendarContract.Calendars.NAME};
-        final String[] expectedSelectionArgs = new String[]{STUB_CALENDAR_NAME};
+        TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
 
         // When
-        useCase.execute(STUB_CALENDAR_NAME, testSubscriber);
+        useCase.execute(mockEventRequest, testSubscriber);
 
         // Then
         verify(mockContext, times(1))
                 .checkPermission(anyString(), anyInt(), anyInt());
-        verify(mockContentResolver, times(1)).query(
-                expectedUri,
-                expectedProjection,
-                expectedSelection,
-                expectedSelectionArgs,
-                null);
         testSubscriber.assertCompleted();
         assertThat(testSubscriber.getOnNextEvents().size(), is(0));
     }
@@ -164,27 +244,14 @@ public class FindCalendarUserCaseTest {
                 .thenReturn(null);
         when(mockContext.getContentResolver()).thenReturn(mockContentResolver);
 
-        TestSubscriber<CalendarEntity> testSubscriber = new TestSubscriber<>();
-
-        final Uri expectedUri = CalendarContract.Calendars.CONTENT_URI;
-        final String expectedSelection = String.format("(%s = ?)", CalendarContract.Calendars.NAME);
-        final String[] expectedProjection = new String[]{
-                CalendarContract.Calendars._ID,
-                CalendarContract.Calendars.NAME};
-        final String[] expectedSelectionArgs = new String[]{STUB_CALENDAR_NAME};
+        TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
 
         // When
-        useCase.execute(STUB_CALENDAR_NAME, testSubscriber);
+        useCase.execute(mockEventRequest, testSubscriber);
 
         // Then
         verify(mockContext, times(1))
                 .checkPermission(anyString(), anyInt(), anyInt());
-        verify(mockContentResolver, times(1)).query(
-                expectedUri,
-                expectedProjection,
-                expectedSelection,
-                expectedSelectionArgs,
-                null);
         testSubscriber.assertCompleted();
         assertThat(testSubscriber.getOnNextEvents().size(), is(0));
     }
@@ -195,10 +262,10 @@ public class FindCalendarUserCaseTest {
         when(mockContext.checkPermission(anyString(), anyInt(), anyInt()))
                 .thenReturn(PackageManager.PERMISSION_DENIED);
 
-        TestSubscriber<CalendarEntity> testSubscriber = new TestSubscriber<>();
+        TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
 
         // When
-        useCase.execute(STUB_CALENDAR_NAME, testSubscriber);
+        useCase.execute(mockEventRequest, testSubscriber);
 
         // Then
         verify(mockContext, times(1)).checkPermission(anyString(), anyInt(), anyInt());
@@ -216,11 +283,11 @@ public class FindCalendarUserCaseTest {
         when(mockContext.checkPermission(anyString(), anyInt(), anyInt()))
                 .thenReturn(PackageManager.PERMISSION_DENIED);
 
-        TestSubscriber<CalendarEntity> testSubscriber = new TestSubscriber<>();
+        TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
         testSubscriber.unsubscribe();
 
         // When
-        useCase.execute(STUB_CALENDAR_NAME, testSubscriber);
+        useCase.execute(mockEventRequest, testSubscriber);
 
         // Then
         verify(mockContext, times(0)).checkPermission(anyString(), anyInt(), anyInt());

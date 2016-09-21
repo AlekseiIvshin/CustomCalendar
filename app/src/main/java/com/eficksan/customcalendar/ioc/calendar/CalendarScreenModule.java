@@ -1,7 +1,7 @@
 package com.eficksan.customcalendar.ioc.calendar;
 
 import com.eficksan.customcalendar.domain.calendar.FetchEventsUseCase;
-import com.eficksan.customcalendar.domain.calendar.FindCalendarUserCase;
+import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 import com.eficksan.customcalendar.presentation.calendar.CalendarPresenter;
 import com.eficksan.customcalendar.presentation.common.PermissionsRequestListener;
 
@@ -26,9 +26,9 @@ public class CalendarScreenModule {
     @Provides
     @CalendarScreenScope
     public CalendarPresenter provideCalendarPresenter(
-            FindCalendarUserCase findCalendarUserCase,
+            FindCalendarUseCase findCalendarUseCase,
             FetchEventsUseCase fetchEventsUseCase,
             @Named("calendarName") String calendarName) {
-        return new CalendarPresenter(findCalendarUserCase, fetchEventsUseCase, permissionsRequestListener, calendarName);
+        return new CalendarPresenter(findCalendarUseCase, fetchEventsUseCase, permissionsRequestListener, calendarName);
     }
 }

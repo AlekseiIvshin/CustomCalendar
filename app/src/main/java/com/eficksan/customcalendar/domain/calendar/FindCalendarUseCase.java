@@ -18,9 +18,9 @@ import rx.Observable;
 import rx.Scheduler;
 import rx.Subscriber;
 
-public class FindCalendarUserCase extends BaseUseCase<String, CalendarEntity> {
+public class FindCalendarUseCase extends BaseUseCase<String, CalendarEntity> {
 
-    private static final String TAG = FindCalendarUserCase.class.getSimpleName();
+    private static final String TAG = FindCalendarUseCase.class.getSimpleName();
 
     private final Context mContext;
     private final CalendarEntityMapper mapper;
@@ -29,7 +29,7 @@ public class FindCalendarUserCase extends BaseUseCase<String, CalendarEntity> {
     private final String selection = String.format("(%s = ?)", Calendars.NAME);
     private final String[] projection = new String[]{Calendars._ID, Calendars.NAME};
 
-    public FindCalendarUserCase(
+    public FindCalendarUseCase(
             Context context,
             CalendarEntityMapper mapper,
             Scheduler uiScheduler, Scheduler jobScheduler) {

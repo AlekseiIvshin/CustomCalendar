@@ -3,8 +3,9 @@ package com.eficksan.customcalendar.ioc.common;
 import android.content.Context;
 
 import com.eficksan.customcalendar.data.calendar.CalendarEntityMapper;
+import com.eficksan.customcalendar.data.calendar.EventEntityMapper;
 import com.eficksan.customcalendar.domain.calendar.FetchEventsUseCase;
-import com.eficksan.customcalendar.domain.calendar.FindCalendarUserCase;
+import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 
 import javax.inject.Named;
 
@@ -19,23 +20,28 @@ import rx.Scheduler;
 public class CalendarModule {
 
     @Provides
-    public CalendarEntityMapper provideMapper() {
+    public EventEntityMapper provideEntityMapper() {
+        return new EventEntityMapper();
+    }
+    @Provides
+    public CalendarEntityMapper provideCalendarMapper() {
         return new CalendarEntityMapper();
     }
 
     @Provides
-    public FindCalendarUserCase provideFindCalendarUserCase(
+    public FindCalendarUseCase provideFindCalendarUserCase(
             Context context,
             CalendarEntityMapper mapper,
             @Named("io") Scheduler ioScheduler, @Named("ui") Scheduler uiScheduler) {
-        return new FindCalendarUserCase(context, mapper, uiScheduler, ioScheduler);
+        return new FindCalendarUseCase(context, mapper, uiScheduler, ioScheduler);
     }
 
     @Provides
     public FetchEventsUseCase provideFetchEventsUserCase(
             Context context,
+            EventEntityMapper mapper,
             @Named("io") Scheduler ioScheduler, @Named("ui") Scheduler uiScheduler) {
-        return new FetchEventsUseCase(context, uiScheduler, ioScheduler);
+        return new FetchEventsUseCase(context, mapper, uiScheduler, ioScheduler);
     }
 
 }
