@@ -1,5 +1,7 @@
 package com.eficksan.customcalendar.presentation.calendar;
 
+import android.support.annotation.StringRes;
+
 import com.eficksan.customcalendar.data.calendar.EventEntity;
 
 import org.joda.time.DateTime;
@@ -12,11 +14,13 @@ import rx.Observable;
  * Created by Aleksei_Ivshin on 9/20/16.
  */
 
-public interface ICalendarView extends IView {
+public interface ICalendarView {
 
     void showMonth(int monthNumber, ArrayList<EventEntity> events);
 
     Observable<DateTime> getSelectedDateTimeChanges();
 
     Observable<DateTime> getShownMonthChanges();
+
+    void notifyUser(@StringRes int messageResId);
 }

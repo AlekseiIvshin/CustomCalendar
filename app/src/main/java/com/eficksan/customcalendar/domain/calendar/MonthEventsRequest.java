@@ -6,11 +6,11 @@ import org.joda.time.DateTime;
  * Created by Aleksei Ivshin
  * on 20.09.2016.
  */
-public class MonthEventsRequest {
+public class MonthEventsRequest implements EventsRequest {
 
-    public final long calendarId;
-    public final long fromDate;
-    public final long toDate;
+    private final long calendarId;
+    private final long fromDate;
+    private final long toDate;
 
     private MonthEventsRequest(long calendarId, long fromDate, long toDate) {
         this.calendarId = calendarId;
@@ -19,10 +19,34 @@ public class MonthEventsRequest {
     }
 
     public static MonthEventsRequest createNew(long calendarId, DateTime date) {
-        DateTime startDateTime = date.withDayOfMonth(1);
-        DateTime endDateTime = date.dayOfMonth().withMaximumValue();
+        DateTime startDateTime = date.withDayOfMonth(1).withTime(0, 0, 0, 0);
+        DateTime endDateTime = date.dayOfMonth().withMaximumValue().withTime(23, 59, 0, 0);
         long fromDate = startDateTime.getMillis();
         long toDate = endDateTime.getMillis();
         return new MonthEventsRequest(calendarId, fromDate, toDate);
+    }
+
+    @Override
+    public long calendarId() {
+        return calendarId;
+    }
+
+    @Override
+    public long fromDate() {
+        return fromDate;
+    }
+
+    @Override
+    public long toDate() {
+        return toDate;
+    }
+
+    @Override
+    public String toString() {
+        return "MonthEventsRequest{" +
+                "calendarId=" + calendarId +
+                ", fromDate=" + new DateTime(fromDate) +
+                ", toDate=" + new DateTime(toDate) +
+                '}';
     }
 }

@@ -1,60 +1,57 @@
 package com.eficksan.customcalendar.presentation.calendar;
 
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.eficksan.customcalendar.App;
 import com.eficksan.customcalendar.R;
-import com.eficksan.customcalendar.data.calendar.CalendarEntity;
-import com.eficksan.customcalendar.data.calendar.CalendarEntityMapper;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
-import com.eficksan.customcalendar.data.calendar.EventEntityMapper;
 import com.eficksan.customcalendar.domain.routing.Router;
 import com.eficksan.customcalendar.ioc.calendar.CalendarScreenComponent;
+import com.eficksan.customcalendar.ioc.calendar.CalendarScreenModule;
+import com.eficksan.customcalendar.ioc.calendar.DaggerCalendarScreenComponent;
+import com.eficksan.customcalendar.ioc.common.CalendarModule;
+import com.eficksan.customcalendar.presentation.common.PermissionResultListener;
+import com.eficksan.customcalendar.presentation.common.PermissionsRequestListener;
 import com.p_v.flexiblecalendar.FlexibleCalendarView;
 import com.p_v.flexiblecalendar.entity.Event;
 
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 import javax.inject.Inject;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import rx.Observable;
+import rx.functions.Func1;
+import rx.subjects.BehaviorSubject;
 
-import static android.Manifest.permission.WRITE_CALENDAR;
-import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-
-public class CalendarFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,ICalendarView {
+public class CalendarFragment extends Fragment implements ICalendarView, PermissionsRequestListener {
     public static final String TAG = CalendarFragment.class.getSimpleName();
-    private static final int CALENDAR_PERMISSION = 42;
 
-    private static final int CALENDAR_FETCHING_LOADER_ID = 1;
-    private static final int EVENTS_FETCHING_LOADER_ID = 2;
-    private static final String EXTRA_CALENDAR_ID = "EXTRA_CALENDAR_ID";
+    LinkedList<PermissionResultListener> mPermissionResultListeners;
 
     @Bind(R.id.calendar)
     FlexibleCalendarView mCalendarView;
 
     @Inject
     CalendarPresenter mPresenter;
+
+    private CalendarScreenComponent calendarScreenComponent;
+    private BehaviorSubject<DateTime> mMonthChannel;
+    private BehaviorSubject<DateTime> mDaysChannel;
 
     public CalendarFragment() {
         // Required empty public constructor
@@ -69,9 +66,9 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ((App)getActivity().getApplication()).plusCalendarScreenComponent().inject(this);
+        setUpInjectionComponent().inject(this);
+        mPermissionResultListeners = new LinkedList<>();
         mPresenter.takeRouter((Router) getActivity());
-        mPresenter.setTargetCalendarName("eficksan@gmail.com");
         mPresenter.onCreate(savedInstanceState);
 
     }
@@ -88,24 +85,34 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.bind(this, view);
 
-        mPresenter.onViewCreated(this);
+        DateTime currentDate = DateTime.now().withHourOfDay(0).withMinuteOfHour(0);
 
+        mMonthChannel = BehaviorSubject.create(currentDate);
+        mDaysChannel = BehaviorSubject.create(currentDate);
 
-
-        fetchCalendars();
-
-        final List<Event> eventColorList = getEventColorList();
-
-        mCalendarView.setEventDataProvider(new FlexibleCalendarView.EventDataProvider() {
+        mCalendarView.setOnMonthChangeListener(new FlexibleCalendarView.OnMonthChangeListener() {
             @Override
-            public List<? extends Event> getEventsForTheDay(int year, int month, int day) {
-                return eventColorList;
+            public void onMonthChange(int year, int month, int direction) {
+                mMonthChannel.onNext(new DateTime(year, month + 1, 1, 0, 0));
             }
         });
+
+        mCalendarView.setOnDateClickListener(new FlexibleCalendarView.OnDateClickListener() {
+            @Override
+            public void onDateClick(int year, int month, int day) {
+                mDaysChannel.onNext(new DateTime(year, month + 1, day + 1, 0, 0));
+            }
+        });
+
+        mPresenter.onViewCreated(this);
     }
 
     @Override
     public void onDestroyView() {
+        mCalendarView.setOnMonthChangeListener(null);
+        mCalendarView.setOnDateClickListener(null);
+        mMonthChannel.onCompleted();
+        mDaysChannel.onCompleted();
         mPresenter.onViewDestroyed();
         ButterKnife.unbind(this);
         super.onDestroyView();
@@ -115,115 +122,70 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
     public void onDestroy() {
         mPresenter.releaseRouter();
         mPresenter.onDestroy();
-        ((App)getActivity().getApplication()).removeCalendarScreenComponent();
+        removeInjectionComponent();
         super.onDestroy();
     }
 
-    private void fetchCalendars() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                && PERMISSION_GRANTED != getActivity().checkSelfPermission(WRITE_CALENDAR)) {
-            requestPermissions(new String[]{WRITE_CALENDAR}, CALENDAR_PERMISSION);
-        } else {
-            getLoaderManager().initLoader(CALENDAR_FETCHING_LOADER_ID, null, this);
-        }
-    }
-
-    private List<Event> getEventColorList() {
-        Random random = new Random();
-        int eventCount = random.nextInt(4) + 1;
-
-        ArrayList<Event> events = new ArrayList<>();
-        for (int i = 0; i < eventCount; i++) {
-            events.add(new MyEvent());
-        }
-        return events;
-    }
-
     @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        switch (id) {
-            case CALENDAR_FETCHING_LOADER_ID: {
-                Uri uri = CalendarContract.Calendars.CONTENT_URI;
-                String selection = String.format("(%s = ?)", CalendarContract.Calendars.NAME);
-                String[] selectionArgs = new String[]{"eficksan@gmail.com"};
-                String[] projection = new String[]{CalendarContract.Calendars._ID, CalendarContract.Calendars.NAME};
-                return new CursorLoader(getActivity(), uri, projection, selection, selectionArgs, null);
-            }
-            case EVENTS_FETCHING_LOADER_ID: {
-                DateTime fromDate = DateTime.now();
-                DateTime toDate = fromDate.plusMonths(1);
-                long calendarId = args.getLong(EXTRA_CALENDAR_ID);
-                Log.v(TAG, String.format("Request events for calendar (id = %d) from %s to %s", calendarId, fromDate, toDate));
-
-                Uri uri = CalendarContract.Events.CONTENT_URI;
-                String selection = String.format("(%s = ?) AND (%s >= ?) AND (%s < ?)",
-                        CalendarContract.Events.CALENDAR_ID,
-                        CalendarContract.Events.DTSTART,
-                        CalendarContract.Events.DTEND);
-                String[] selectionArgs = new String[]{
-                        String.valueOf(calendarId),
-                        String.valueOf(fromDate.getMillis()),
-                        String.valueOf(toDate.getMillis())
-                };
-                String[] projection = new String[]{
-                        CalendarContract.Events._ID,
-                        CalendarContract.Events.CALENDAR_ID,
-                        CalendarContract.Events.TITLE,
-                        CalendarContract.Events.DESCRIPTION,
-                        CalendarContract.Events.EVENT_LOCATION,
-                        CalendarContract.Events.DTSTART,
-                        CalendarContract.Events.DTEND};
-                return new CursorLoader(getActivity(), uri, projection, selection, selectionArgs, null);
-            }
-            default:
-                return null;
-        }
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor cur) {
-        switch (loader.getId()) {
-            case CALENDAR_FETCHING_LOADER_ID:
-                if (cur != null) {
-                    if (cur.moveToFirst()) {
-                        CalendarEntity calendarEntity = CalendarEntityMapper.mapToObject(cur);
-                        Log.v(TAG, String.format("Found calendar: id=%d, display name = '%s'", calendarEntity.id, calendarEntity.displayName));
-                        Bundle args = new Bundle();
-                        args.putLong(EXTRA_CALENDAR_ID, calendarEntity.id);
-                        getLoaderManager().initLoader(EVENTS_FETCHING_LOADER_ID, args, this);
-                    }
+    public void showMonth(int monthNumber, final ArrayList<EventEntity> events) {
+        int calendarMonth = mCalendarView.getCurrentMonth() + 1;
+        Log.v(TAG, String.format("Show month: calendar equals to %d, events received for %d, found events %d",
+                calendarMonth,
+                monthNumber,
+                events.size()));
+        if (calendarMonth == monthNumber) {
+            mCalendarView.setEventDataProvider(new FlexibleCalendarView.EventDataProvider() {
+                @Override
+                public List<? extends Event> getEventsForTheDay(final int year, final int month, final int day) {
+                    final DateTime start = new DateTime(year, month + 1, day, 0, 0);
+                    final DateTime end = start.withHourOfDay(23).withMinuteOfHour(59);
+                    return Observable.from(events)
+                            .filter(new Func1<EventEntity, Boolean>() {
+                                @Override
+                                public Boolean call(EventEntity eventEntity) {
+                                    return start.isBefore(eventEntity.startAt) && end.isAfter(eventEntity.endAt);
+                                }
+                            }).map(new Func1<EventEntity, MyEvent>() {
+                                @Override
+                                public MyEvent call(EventEntity eventEntity) {
+                                    return new MyEvent();
+                                }
+                            })
+                            .toList().toBlocking().first();
                 }
-                break;
-            case EVENTS_FETCHING_LOADER_ID:
-                if (cur != null) {
-                    EventEntity eventEntity;
-                    while (cur.moveToNext()) {
-                        eventEntity = EventEntityMapper.mapToObject(cur);
-                        Log.v(TAG, eventEntity.toString());
-                    }
-                }
-                break;
+            });
+            mCalendarView.refresh();
         }
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-
-    }
-
-    @Override
-    public void showMonth(int monthNumber, ArrayList<EventEntity> events) {
-
     }
 
     @Override
     public Observable<DateTime> getSelectedDateTimeChanges() {
-        return null;
+        return mMonthChannel;
     }
 
     @Override
     public Observable<DateTime> getShownMonthChanges() {
-        return null;
+        return mDaysChannel;
+    }
+
+    @Override
+    public void notifyUser(@StringRes int messageResId) {
+        Toast.makeText(getActivity(), messageResId, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onPermissionsRequired(String[] permissions, int requestCode) {
+        requestPermissions(permissions, requestCode);
+    }
+
+    @Override
+    public void addListener(PermissionResultListener resultListener) {
+        mPermissionResultListeners.add(resultListener);
+    }
+
+    @Override
+    public void removeListener(PermissionResultListener resultListener) {
+        mPermissionResultListeners.remove(resultListener);
     }
 
     private class MyEvent implements Event {
@@ -237,8 +199,24 @@ public class CalendarFragment extends Fragment implements LoaderManager.LoaderCa
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (CALENDAR_PERMISSION == requestCode) {
-            fetchCalendars();
+        for (PermissionResultListener resultListener : mPermissionResultListeners) {
+            resultListener.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
+    }
+
+    public CalendarScreenComponent setUpInjectionComponent() {
+        if (calendarScreenComponent == null) {
+            calendarScreenComponent = DaggerCalendarScreenComponent.builder()
+                    .appComponent(((App) getActivity().getApplication()).getAppComponent())
+                    .calendarModule(new CalendarModule())
+                    .calendarScreenModule(new CalendarScreenModule(this))
+                    .build();
+        }
+        return calendarScreenComponent;
+    }
+
+
+    public void removeInjectionComponent() {
+        calendarScreenComponent = null;
     }
 }

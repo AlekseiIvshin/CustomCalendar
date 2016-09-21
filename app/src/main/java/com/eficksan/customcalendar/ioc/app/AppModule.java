@@ -44,4 +44,10 @@ public class AppModule {
     public Scheduler provideUiScheduler() {
         return AndroidSchedulers.mainThread();
     }
+
+    @Provides
+    @Named("calendarName")
+    public String provideCalendarName() {
+        return "eficksan@gmail.com";
+    }
 }

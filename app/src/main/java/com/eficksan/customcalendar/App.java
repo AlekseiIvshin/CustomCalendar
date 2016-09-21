@@ -7,7 +7,6 @@ import com.eficksan.customcalendar.ioc.app.AppModule;
 import com.eficksan.customcalendar.ioc.app.DaggerAppComponent;
 import com.eficksan.customcalendar.ioc.calendar.CalendarScreenModule;
 import com.eficksan.customcalendar.ioc.calendar.CalendarScreenComponent;
-import com.eficksan.customcalendar.ioc.calendar.DaggerCalendarScreenComponent;
 
 /**
  * Created by Aleksei_Ivshin on 9/20/16.
@@ -27,18 +26,8 @@ public class App extends Application {
                 .build();
     }
 
-    public CalendarScreenComponent plusCalendarScreenComponent() {
-        if (calendarScreenComponent == null) {
-            calendarScreenComponent = DaggerCalendarScreenComponent.builder()
-                    .appComponent(appComponent)
-                    .calendarModule(new CalendarScreenModule())
-                    .build();
-        }
-        return calendarScreenComponent;
+    public AppComponent getAppComponent() {
+        return appComponent;
     }
 
-
-    public void removeCalendarScreenComponent() {
-        calendarScreenComponent = null;
-    }
 }

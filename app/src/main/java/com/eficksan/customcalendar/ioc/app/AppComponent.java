@@ -1,5 +1,7 @@
 package com.eficksan.customcalendar.ioc.app;
 
+import android.content.Context;
+
 import javax.inject.Named;
 
 import dagger.Component;
@@ -12,6 +14,8 @@ import rx.Scheduler;
 @Component(modules = {AppModule.class})
 public interface AppComponent {
 
+    Context context();
+
     @Named("io")
     Scheduler ioScheduler();
 
@@ -20,4 +24,7 @@ public interface AppComponent {
 
     @Named("ui")
     Scheduler uiScheduler();
+
+    @Named("calendarName")
+    String calendarName();
 }
