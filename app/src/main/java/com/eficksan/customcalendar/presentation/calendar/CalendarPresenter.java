@@ -9,7 +9,7 @@ import com.eficksan.customcalendar.R;
 import com.eficksan.customcalendar.data.calendar.CalendarEntity;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
-import com.eficksan.customcalendar.domain.calendar.FetchEventsUserCase;
+import com.eficksan.customcalendar.domain.calendar.FetchEventsUseCase;
 import com.eficksan.customcalendar.domain.calendar.FindCalendarUserCase;
 import com.eficksan.customcalendar.domain.calendar.MonthEventsRequest;
 import com.eficksan.customcalendar.presentation.common.BasePresenter;
@@ -38,17 +38,17 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
     private CompositeSubscription mViewEventsSubscription;
 
     private final FindCalendarUserCase mFindCalendarUserCase;
-    private final FetchEventsUserCase mFetchEventsUserCase;
+    private final FetchEventsUseCase mFetchEventsUseCase;
     private final PermissionsRequestListener mPermissionsRequestListener;
     private final String mTargetCalendarName;
 
     public CalendarPresenter(
             FindCalendarUserCase findCalendarUserCase,
-            FetchEventsUserCase fetchEventsUserCase,
+            FetchEventsUseCase fetchEventsUseCase,
             PermissionsRequestListener permissionsRequestListener,
             String targetCalendarName) {
         this.mFindCalendarUserCase = findCalendarUserCase;
-        this.mFetchEventsUserCase = fetchEventsUserCase;
+        this.mFetchEventsUseCase = fetchEventsUseCase;
         this.mPermissionsRequestListener = permissionsRequestListener;
         mTargetCalendarName = targetCalendarName;
     }
@@ -90,7 +90,7 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
     public void onDestroy() {
         mPermissionsRequestListener.removeListener(this);
         mFindCalendarUserCase.unsubscribe();
-        mFetchEventsUserCase.unsubscribe();
+        mFetchEventsUseCase.unsubscribe();
         super.onDestroy();
     }
 
@@ -128,7 +128,7 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
             MonthEventsRequest eventsRequest = MonthEventsRequest
                     .createNew(mCalendarId, mTargetDate);
 
-            mFetchEventsUserCase.execute(eventsRequest, new FetchEventsSubscriber());
+            mFetchEventsUseCase.execute(eventsRequest, new FetchEventsSubscriber());
         }
     }
 
@@ -194,7 +194,7 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
         @Override
         public void onCompleted() {
             Log.v(TAG, "There are not more events");
-            mFetchEventsUserCase.unsubscribe();
+            mFetchEventsUseCase.unsubscribe();
             if (mView != null) {
                 mView.showMonth(mTargetDate.getMonthOfYear(), eventEntities);
             }
@@ -204,7 +204,7 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
         public void onError(Throwable e) {
             Log.e(TAG, e.getMessage(), e);
             // TODO: handle permission required
-            mFetchEventsUserCase.unsubscribe();
+            mFetchEventsUseCase.unsubscribe();
             if (e instanceof PermissionRequiredException) {
                 String[] requiredPermissions = ((PermissionRequiredException) e).requiredPermissions;
                 mPermissionsRequestListener.onPermissionsRequired(requiredPermissions, REQUEST_FETCH_EVENTS);

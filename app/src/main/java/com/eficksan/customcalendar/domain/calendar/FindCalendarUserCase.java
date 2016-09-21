@@ -16,48 +16,48 @@ import com.eficksan.customcalendar.domain.common.BaseUseCase;
 
 import rx.Observable;
 import rx.Scheduler;
-import rx.functions.Func1;
+import rx.Subscriber;
 
 public class FindCalendarUserCase extends BaseUseCase<String, CalendarEntity> {
 
     private static final String TAG = FindCalendarUserCase.class.getSimpleName();
+
     private final Context mContext;
+    private final CalendarEntityMapper mapper;
 
     private final Uri uri = Calendars.CONTENT_URI;
     private final String selection = String.format("(%s = ?)", Calendars.NAME);
     private final String[] projection = new String[]{Calendars._ID, Calendars.NAME};
 
-    public FindCalendarUserCase(Context context, Scheduler uiScheduler, Scheduler jobScheduler) {
+    public FindCalendarUserCase(
+            Context context,
+            CalendarEntityMapper mapper,
+            Scheduler uiScheduler, Scheduler jobScheduler) {
         super(jobScheduler, uiScheduler);
         mContext = context;
+        this.mapper = mapper;
     }
 
     @Override
     protected Observable<CalendarEntity> buildObservable(final String calendarNameParam) {
         Log.v(TAG, "Search calendar by name: " + calendarNameParam);
-        return Observable.just(calendarNameParam)
-                .map(new Func1<String, Cursor>() {
-                    @Override
-                    public Cursor call(String calendarName) {
-                        if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-                            Log.e(TAG, "Need more permissions: " + Manifest.permission.READ_CALENDAR);
-                            throw new PermissionRequiredException(new String[]{Manifest.permission.READ_CALENDAR});
-                        }
-                        String[] selectionArgs = new String[]{calendarName};
-                        return mContext.getContentResolver().query(uri, projection, selection, selectionArgs, null);
+        return Observable.create(new Observable.OnSubscribe<CalendarEntity>() {
+            @Override
+            public void call(Subscriber<? super CalendarEntity> subscriber) {
+                if (!subscriber.isUnsubscribed()) {
+                    if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+                        Log.e(TAG, "Need more permissions: " + Manifest.permission.READ_CALENDAR);
+                        subscriber.onError(new PermissionRequiredException(new String[]{Manifest.permission.READ_CALENDAR}));
+                        return;
                     }
-                })
-                .map(new Func1<Cursor, CalendarEntity>() {
-                    @Override
-                    public CalendarEntity call(Cursor cursor) {
-                        if (cursor != null && cursor.moveToFirst()) {
-                            CalendarEntity calendarEntity = CalendarEntityMapper.mapToObject(cursor);
-                            Log.v(TAG, "Found calendar: " + calendarEntity.toString());
-                            return calendarEntity;
-                        }
-                        Log.v(TAG, "Not found calendar by name = " + calendarNameParam);
-                        return null;
+                    String[] selectionArgs = new String[]{calendarNameParam};
+                    Cursor cursor = mContext.getContentResolver().query(uri, projection, selection, selectionArgs, null);
+                    if (cursor != null && cursor.moveToFirst()) {
+                        subscriber.onNext(mapper.mapToObject(cursor));
                     }
-                });
+                    subscriber.onCompleted();
+                }
+            }
+        });
     }
 }

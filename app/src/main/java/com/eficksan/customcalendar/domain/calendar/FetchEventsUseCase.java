@@ -22,12 +22,12 @@ import rx.Subscriber;
  * Created by Aleksei_Ivshin on 9/20/16.
  */
 
-public class FetchEventsUserCase extends BaseUseCase<EventsRequest, EventEntity> {
+public class FetchEventsUseCase extends BaseUseCase<EventsRequest, EventEntity> {
 
-    private static final String TAG = FetchEventsUserCase.class.getSimpleName();
+    private static final String TAG = FetchEventsUseCase.class.getSimpleName();
     private final Context mContext;
 
-    public FetchEventsUserCase(Context context, Scheduler uiScheduler, Scheduler jobScheduler) {
+    public FetchEventsUseCase(Context context, Scheduler uiScheduler, Scheduler jobScheduler) {
         super(jobScheduler, uiScheduler);
         mContext = context;
     }
