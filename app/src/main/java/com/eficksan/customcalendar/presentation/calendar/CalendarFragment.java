@@ -21,6 +21,7 @@ import com.eficksan.customcalendar.ioc.calendar.DaggerCalendarScreenComponent;
 import com.eficksan.customcalendar.ioc.common.CalendarModule;
 import com.eficksan.customcalendar.presentation.common.PermissionResultListener;
 import com.eficksan.customcalendar.presentation.common.PermissionsRequestListener;
+import com.eficksan.customcalendar.presentation.common.PermissionsRequestListenerDelegate;
 import com.p_v.flexiblecalendar.FlexibleCalendarView;
 import com.p_v.flexiblecalendar.entity.Event;
 
@@ -41,7 +42,7 @@ import rx.subjects.BehaviorSubject;
 public class CalendarFragment extends Fragment implements ICalendarView, PermissionsRequestListener {
     public static final String TAG = CalendarFragment.class.getSimpleName();
 
-    LinkedList<PermissionResultListener> mPermissionResultListeners;
+    PermissionsRequestListenerDelegate permissionsRequestListenerDelegate;
 
     @Bind(R.id.calendar)
     FlexibleCalendarView mCalendarView;
@@ -66,8 +67,8 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        permissionsRequestListenerDelegate = new PermissionsRequestListenerDelegate();
         setUpInjectionComponent().inject(this);
-        mPermissionResultListeners = new LinkedList<>();
         mPresenter.takeRouter((Router) getActivity());
         mPresenter.onCreate(savedInstanceState);
 
@@ -180,12 +181,12 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
 
     @Override
     public void addListener(PermissionResultListener resultListener) {
-        mPermissionResultListeners.add(resultListener);
+        permissionsRequestListenerDelegate.addListener(resultListener);
     }
 
     @Override
     public void removeListener(PermissionResultListener resultListener) {
-        mPermissionResultListeners.remove(resultListener);
+        permissionsRequestListenerDelegate.removeListener(resultListener);
     }
 
     private class MyEvent implements Event {
@@ -197,11 +198,12 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        for (PermissionResultListener resultListener : mPermissionResultListeners) {
-            resultListener.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
+        permissionsRequestListenerDelegate
+                .onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     public CalendarScreenComponent setUpInjectionComponent() {

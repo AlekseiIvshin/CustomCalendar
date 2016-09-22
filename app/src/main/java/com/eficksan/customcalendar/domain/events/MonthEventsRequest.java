@@ -1,4 +1,4 @@
-package com.eficksan.customcalendar.domain.calendar;
+package com.eficksan.customcalendar.domain.events;
 
 import org.joda.time.DateTime;
 

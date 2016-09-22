@@ -4,7 +4,9 @@ import android.content.Context;
 
 import com.eficksan.customcalendar.data.calendar.CalendarEntityMapper;
 import com.eficksan.customcalendar.data.calendar.EventEntityMapper;
-import com.eficksan.customcalendar.domain.calendar.FetchEventsUseCase;
+import com.eficksan.customcalendar.data.event.EventsRepository;
+import com.eficksan.customcalendar.domain.events.AddEventUseCase;
+import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
 import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 
 import javax.inject.Named;
@@ -20,9 +22,15 @@ import rx.Scheduler;
 public class CalendarModule {
 
     @Provides
+    public EventsRepository prodiveEventsRepository(Context context) {
+        return new EventsRepository(context);
+    }
+
+    @Provides
     public EventEntityMapper provideEntityMapper() {
         return new EventEntityMapper();
     }
+
     @Provides
     public CalendarEntityMapper provideCalendarMapper() {
         return new CalendarEntityMapper();
@@ -38,10 +46,16 @@ public class CalendarModule {
 
     @Provides
     public FetchEventsUseCase provideFetchEventsUserCase(
-            Context context,
-            EventEntityMapper mapper,
+            EventsRepository eventsRepository,
             @Named("io") Scheduler ioScheduler, @Named("ui") Scheduler uiScheduler) {
-        return new FetchEventsUseCase(context, mapper, uiScheduler, ioScheduler);
+        return new FetchEventsUseCase(eventsRepository, uiScheduler, ioScheduler);
+    }
+
+    @Provides
+    public AddEventUseCase provideAddEventUseCase(
+            EventsRepository eventsRepository,
+            @Named("io") Scheduler ioScheduler, @Named("ui") Scheduler uiScheduler) {
+        return new AddEventUseCase(eventsRepository, uiScheduler, ioScheduler);
     }
 
 }

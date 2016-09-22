@@ -3,5 +3,16 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="calendar_permission_not_granted">Permissions are required :\'(</string>
+    <string name="permission_not_granted">Permissions are required :\'(</string>
+    <string name="event.input.title">Enter title</string>
+    <string name="event.input.description">Enter description</string>
+    <string name="event.input.location">Enter location</string>
+    <string name="event.input.start_date">Start at</string>
+    <string name="event.input.end_date">End at</string>
+    <string name="action_add_event">Add event</string>
+    <string name="label_event_add">Add</string>
+    <string name="message_event_adding_success">Event added</string>
+    <string name="message_event_adding_fail">Some error occurred during event adding.</string>
+    <string name="event_date_pattern">on dd, MMM yyyy</string>
+    <string name="event_time_pattern">HH:mm</string>
 </resources>

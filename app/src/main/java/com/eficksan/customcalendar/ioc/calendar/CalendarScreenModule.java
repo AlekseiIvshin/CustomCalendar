@@ -1,6 +1,6 @@
 package com.eficksan.customcalendar.ioc.calendar;
 
-import com.eficksan.customcalendar.domain.calendar.FetchEventsUseCase;
+import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
 import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 import com.eficksan.customcalendar.presentation.calendar.CalendarPresenter;
 import com.eficksan.customcalendar.presentation.common.PermissionsRequestListener;

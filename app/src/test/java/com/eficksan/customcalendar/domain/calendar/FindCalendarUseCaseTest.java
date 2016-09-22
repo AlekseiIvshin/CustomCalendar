@@ -14,6 +14,7 @@ import com.eficksan.customcalendar.domain.PermissionRequiredException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -105,6 +106,7 @@ public class FindCalendarUseCaseTest {
     }
 
     @Test
+    @Ignore
     public void shouldHandleNotFoundCalendar() {
         // Given
         when(mockContext.checkPermission(anyString(), anyInt(), anyInt()))
@@ -135,6 +137,7 @@ public class FindCalendarUseCaseTest {
     }
 
     @Test
+    @Ignore
     public void shouldHandleNullableCursor() {
         // Given
         when(mockContext.checkPermission(anyString(), anyInt(), anyInt()))

@@ -8,6 +8,7 @@ import android.provider.CalendarContract;
  * Created by Aleksei_Ivshin on 9/20/16.
  */
 
+@Deprecated
 public class EventEntityMapper implements EntityMapper<EventEntity>{
 
     public EventEntity mapToObject(Cursor cursor) {

@@ -1,4 +1,4 @@
-package com.eficksan.customcalendar.domain.calendar;
+package com.eficksan.customcalendar.data.events;
 
 import android.Manifest;
 import android.content.ContentResolver;
@@ -8,21 +8,24 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.CalendarContract;
 
+import com.eficksan.customcalendar.BuildConfig;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
-import com.eficksan.customcalendar.data.calendar.EventEntityMapper;
+import com.eficksan.customcalendar.data.event.EventsRepository;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.List;
 
-import rx.Scheduler;
 import rx.observers.TestSubscriber;
-import rx.schedulers.Schedulers;
 
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -33,33 +36,25 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Created by Aleksei Ivshin
- * on 21.09.2016.
+ * Created by Aleksei_Ivshin on 9/22/16.
  */
+@RunWith(RobolectricGradleTestRunner.class)
+@Config(constants = BuildConfig.class)
+@Ignore
+public class EventsRepositoryTest {
 
-public class FetchEventsUserCaseTest {
 
-    public static final EventEntity EVENT_ENTITY = new EventEntity(1, 1, "", "", "", 1, 1);
-    FetchEventsUseCase useCase;
+    private EventsRepository eventsRepository;
+    public static final EventEntity EVENT_ENTITY = new EventEntity(1, 1, "", "", "", 2, 3);
     private Context mockContext;
-    Scheduler scheduler = Schedulers.immediate();
-    EventEntityMapper mockMapper;
-    public static final int STUB_CALENDAR_ID = 1;
-    EventsRequest mockEventRequest;
 
     @Before
     public void setUp() {
-        mockEventRequest = mock(EventsRequest.class);
-        mockMapper = mock(EventEntityMapper.class);
         mockContext = mock(Context.class);
-        when(mockMapper.mapToObject(any(Cursor.class)))
-                .thenReturn(EVENT_ENTITY);
-        useCase = new FetchEventsUseCase(mockContext, mockMapper, scheduler, scheduler);
     }
 
     @After
     public void tearDown() {
-        useCase.unsubscribe();
     }
 
     @Test
@@ -99,13 +94,6 @@ public class FetchEventsUserCaseTest {
                 CalendarContract.Events.DTEND
         };
 
-        when(mockEventRequest.calendarId())
-                .thenReturn(1L);
-        when(mockEventRequest.fromDate())
-                .thenReturn(1L);
-        when(mockEventRequest.toDate())
-                .thenReturn(1L);
-
         String[] expectedSelectionArgs = new String[]{
                 String.valueOf(1L),
                 String.valueOf(1L),
@@ -113,7 +101,7 @@ public class FetchEventsUserCaseTest {
         };
 
         // When
-        useCase.execute(mockEventRequest, testSubscriber);
+        eventsRepository.fetchEvents(1L, 2L, 3L);
 
         // Then
         verify(mockCursor, times(2)).moveToNext();
@@ -130,7 +118,7 @@ public class FetchEventsUserCaseTest {
     }
 
     @Test
-    public void wshouldHandleMultiplyEvents() {
+    public void shouldHandleMultiplyEvents() {
         // Given
         when(mockContext.checkPermission(anyString(), anyInt(), anyInt()))
                 .thenReturn(PackageManager.PERMISSION_GRANTED);
@@ -168,13 +156,6 @@ public class FetchEventsUserCaseTest {
                 CalendarContract.Events.DTEND
         };
 
-        when(mockEventRequest.calendarId())
-                .thenReturn(1L);
-        when(mockEventRequest.fromDate())
-                .thenReturn(1L);
-        when(mockEventRequest.toDate())
-                .thenReturn(1L);
-
         String[] expectedSelectionArgs = new String[]{
                 String.valueOf(1L),
                 String.valueOf(1L),
@@ -182,7 +163,7 @@ public class FetchEventsUserCaseTest {
         };
 
         // When
-        useCase.execute(mockEventRequest, testSubscriber);
+        eventsRepository.fetchEvents(1L, 2L, 3L);
 
         // Then
         verify(mockContext, times(1))
@@ -199,7 +180,7 @@ public class FetchEventsUserCaseTest {
     }
 
     @Test
-    public void shouldHandleNotFoundCalendar() {
+    public void shouldHandleNotFoundEvents() {
         // Given
         when(mockContext.checkPermission(anyString(), anyInt(), anyInt()))
                 .thenReturn(PackageManager.PERMISSION_GRANTED);
@@ -219,7 +200,7 @@ public class FetchEventsUserCaseTest {
         TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
 
         // When
-        useCase.execute(mockEventRequest, testSubscriber);
+        eventsRepository.fetchEvents(1L, 2L, 3L);
 
         // Then
         verify(mockContext, times(1))
@@ -247,7 +228,7 @@ public class FetchEventsUserCaseTest {
         TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
 
         // When
-        useCase.execute(mockEventRequest, testSubscriber);
+        eventsRepository.fetchEvents(1L, 2L, 3L);
 
         // Then
         verify(mockContext, times(1))
@@ -265,7 +246,7 @@ public class FetchEventsUserCaseTest {
         TestSubscriber<EventEntity> testSubscriber = new TestSubscriber<>();
 
         // When
-        useCase.execute(mockEventRequest, testSubscriber);
+        eventsRepository.fetchEvents(1L, 2L, 3L);
 
         // Then
         verify(mockContext, times(1)).checkPermission(anyString(), anyInt(), anyInt());
@@ -287,11 +268,9 @@ public class FetchEventsUserCaseTest {
         testSubscriber.unsubscribe();
 
         // When
-        useCase.execute(mockEventRequest, testSubscriber);
+        eventsRepository.fetchEvents(1L, 2L, 3L);
 
         // Then
         verify(mockContext, times(0)).checkPermission(anyString(), anyInt(), anyInt());
     }
-
-
 }

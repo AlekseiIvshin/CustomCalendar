@@ -9,9 +9,9 @@ import com.eficksan.customcalendar.R;
 import com.eficksan.customcalendar.data.calendar.CalendarEntity;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
-import com.eficksan.customcalendar.domain.calendar.FetchEventsUseCase;
+import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
 import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
-import com.eficksan.customcalendar.domain.calendar.MonthEventsRequest;
+import com.eficksan.customcalendar.domain.events.MonthEventsRequest;
 import com.eficksan.customcalendar.presentation.common.BasePresenter;
 import com.eficksan.customcalendar.presentation.common.PermissionResultListener;
 import com.eficksan.customcalendar.presentation.common.PermissionsRequestListener;
@@ -140,7 +140,7 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
                         && PackageManager.PERMISSION_GRANTED == grantResults[0]) {
                     fetchEventsForMonth();
                 } else {
-                    mView.notifyUser(R.string.calendar_permission_not_granted);
+                    mView.notifyUser(R.string.permission_not_granted);
                 }
                 break;
             case REQUEST_FIND_CALENDAR:
@@ -148,7 +148,7 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
                         && PackageManager.PERMISSION_GRANTED == grantResults[0]) {
                     findCalendar();
                 } else {
-                    mView.notifyUser(R.string.calendar_permission_not_granted);
+                    mView.notifyUser(R.string.permission_not_granted);
                 }
                 break;
         }
@@ -165,7 +165,6 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
         @Override
         public void onError(Throwable e) {
             Log.e(TAG, e.getMessage(), e);
-            // TODO: handle permission required
             mFindCalendarUseCase.unsubscribe();
             if (e instanceof PermissionRequiredException) {
                 String[] requiredPermissions = ((PermissionRequiredException) e).requiredPermissions;

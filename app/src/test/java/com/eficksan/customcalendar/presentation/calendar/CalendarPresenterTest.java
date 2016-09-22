@@ -6,8 +6,8 @@ import android.content.pm.PackageManager;
 import com.eficksan.customcalendar.data.calendar.CalendarEntity;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
-import com.eficksan.customcalendar.domain.calendar.EventsRequest;
-import com.eficksan.customcalendar.domain.calendar.FetchEventsUseCase;
+import com.eficksan.customcalendar.domain.events.EventsRequest;
+import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
 import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 import com.eficksan.customcalendar.presentation.common.PermissionsRequestListener;
 
