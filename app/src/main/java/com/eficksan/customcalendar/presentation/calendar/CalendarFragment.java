@@ -192,7 +192,7 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
 
         @Override
         public int getColor() {
-            return R.color.calendar_event;
+            return R.color.calendar_color;
         }
     }
 

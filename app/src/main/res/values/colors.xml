@@ -6,5 +6,5 @@
     <color name="background">#FFFFFF</color>
 
     <color name="calendar.past">#CFD8DC</color>
-    <color name="calendar.event">#FF4081</color>
+    <color name="calendar.color">#FF4081</color>
 </resources>

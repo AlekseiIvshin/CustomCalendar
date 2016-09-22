@@ -1,14 +1,20 @@
 package com.eficksan.customcalendar.domain.calendar;
 
 import android.Manifest;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
+import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import com.eficksan.customcalendar.R;
 import com.eficksan.customcalendar.data.calendar.CalendarEntity;
 import com.eficksan.customcalendar.data.calendar.CalendarEntityMapper;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
@@ -38,6 +44,30 @@ public class FindCalendarUseCase extends BaseUseCase<String, CalendarEntity> {
         this.mapper = mapper;
     }
 
+    private static Uri buildCalUri(String calendarName) {
+        return CalendarContract.Calendars.CONTENT_URI
+                .buildUpon()
+                .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+                .appendQueryParameter(Calendars.ACCOUNT_NAME, calendarName)
+                .appendQueryParameter(Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL)
+                .build();
+    }
+
+
+    private static ContentValues buildContentValues(String calendarName, Context context) {
+        final ContentValues cv = new ContentValues();
+        cv.put(Calendars.ACCOUNT_NAME, calendarName);
+        cv.put(Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL);
+        cv.put(Calendars.NAME, calendarName);
+        cv.put(Calendars.CALENDAR_DISPLAY_NAME, calendarName);
+        cv.put(Calendars.CALENDAR_COLOR, ContextCompat.getColor(context, R.color.calendar_color));  //Calendar.getColor() returns int
+        cv.put(Calendars.CALENDAR_ACCESS_LEVEL, Calendars.CAL_ACCESS_OWNER);
+//        cv.put(Calendars.OWNER_ACCOUNT, ACCOUNT_NAME);
+        cv.put(Calendars.VISIBLE, 1);
+        cv.put(Calendars.SYNC_EVENTS, 1);
+        return cv;
+    }
+
     @Override
     protected Observable<CalendarEntity> buildObservable(final String calendarNameParam) {
         Log.v(TAG, "Search calendar by name: " + calendarNameParam);
@@ -51,10 +81,23 @@ public class FindCalendarUseCase extends BaseUseCase<String, CalendarEntity> {
                         return;
                     }
                     String[] selectionArgs = new String[]{calendarNameParam};
-                    Cursor cursor = mContext.getContentResolver().query(uri, projection, selection, selectionArgs, null);
+                    ContentResolver contentResolver = mContext.getContentResolver();
+                    Cursor cursor = contentResolver.query(uri, projection, selection, selectionArgs, null);
                     if (cursor != null && cursor.moveToFirst()) {
+                        Log.v(TAG, "Calendar found: " + calendarNameParam);
                         subscriber.onNext(mapper.mapToObject(cursor));
+                        cursor.close();
+                    } else {
+                        Log.v(TAG, "Calendar not found: " + calendarNameParam);
+                        Uri insertedCalendar = contentResolver.insert(buildCalUri(calendarNameParam), buildContentValues(calendarNameParam, mContext));
+                        Log.v(TAG, "Calendar added: " + insertedCalendar);
+                        cursor = contentResolver.query(insertedCalendar, projection, null, null, null);
+                        if (cursor != null && cursor.moveToFirst()) {
+                            subscriber.onNext(mapper.mapToObject(cursor));
+                            cursor.close();
+                        }
                     }
+
                     subscriber.onCompleted();
                 }
             }

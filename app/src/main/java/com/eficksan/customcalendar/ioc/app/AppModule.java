@@ -48,6 +48,6 @@ public class AppModule {
     @Provides
     @Named("calendarName")
     public String provideCalendarName() {
-        return "eficksan@gmail.com";
+        return "TEST_CALENDAR_2";
     }
 }
