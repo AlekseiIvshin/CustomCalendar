@@ -6,11 +6,9 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.eficksan.customcalendar.R;
-import com.eficksan.customcalendar.data.calendar.CalendarEntity;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
 import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
-import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 import com.eficksan.customcalendar.domain.events.MonthEventsRequest;
 import com.eficksan.customcalendar.presentation.common.BasePresenter;
 import com.eficksan.customcalendar.presentation.common.PermissionResultListener;
@@ -32,25 +30,22 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
 
     private static final String EXTRA_LAST_SHOW_DATE = "EXTRA_LAST_SHOW_DATE";
     private static final int REQUEST_FETCH_EVENTS = 1;
-    private static final int REQUEST_FIND_CALENDAR = 2;
     private DateTime mTargetDate;
     private long mCalendarId = -1;
     private CompositeSubscription mViewEventsSubscription;
 
-    private final FindCalendarUseCase mFindCalendarUseCase;
     private final FetchEventsUseCase mFetchEventsUseCase;
     private final PermissionsRequestListener mPermissionsRequestListener;
-    private final String mTargetCalendarName;
 
     public CalendarPresenter(
-            FindCalendarUseCase findCalendarUseCase,
             FetchEventsUseCase fetchEventsUseCase,
-            PermissionsRequestListener permissionsRequestListener,
-            String targetCalendarName) {
-        this.mFindCalendarUseCase = findCalendarUseCase;
+            PermissionsRequestListener permissionsRequestListener) {
         this.mFetchEventsUseCase = fetchEventsUseCase;
         this.mPermissionsRequestListener = permissionsRequestListener;
-        mTargetCalendarName = targetCalendarName;
+    }
+
+    public void setCalendarId(long calendarId) {
+        this.mCalendarId = calendarId;
     }
 
     @Override
@@ -63,13 +58,13 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
             long savedLastTime = savedInstanceStates.getLong(EXTRA_LAST_SHOW_DATE);
             mTargetDate = new DateTime(savedLastTime);
         }
-        findCalendar();
     }
 
     @Override
     public void onViewCreated(ICalendarView view) {
         super.onViewCreated(view);
         subscribeOnViewEvents();
+//        fetchEventsForMonth(mCalendarId, mTargetDate);
     }
 
     @Override
@@ -89,7 +84,6 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
     @Override
     public void onDestroy() {
         mPermissionsRequestListener.removeListener(this);
-        mFindCalendarUseCase.unsubscribe();
         mFetchEventsUseCase.unsubscribe();
         super.onDestroy();
     }
@@ -103,7 +97,7 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
                     public void call(DateTime dateTime) {
                         mTargetDate = dateTime;
                         if (mCalendarId > 0) {
-                            fetchEventsForMonth();
+                            fetchEventsForMonth(mCalendarId, mTargetDate);
                         }
                     }
                 }));
@@ -119,14 +113,10 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
                 }));
     }
 
-    private void findCalendar() {
-        mFindCalendarUseCase.execute(mTargetCalendarName, new FoundCalendarSubscriber());
-    }
-
-    private void fetchEventsForMonth() {
-        if (mCalendarId > 0) {
+    private void fetchEventsForMonth(long calendarId, DateTime targetDate) {
+        if (calendarId > 0) {
             MonthEventsRequest eventsRequest = MonthEventsRequest
-                    .createNew(mCalendarId, mTargetDate);
+                    .createNew(calendarId, targetDate);
 
             mFetchEventsUseCase.execute(eventsRequest, new FetchEventsSubscriber());
         }
@@ -138,48 +128,11 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
             case REQUEST_FETCH_EVENTS:
                 if (grantResults.length > 0
                         && PackageManager.PERMISSION_GRANTED == grantResults[0]) {
-                    fetchEventsForMonth();
+                    fetchEventsForMonth(mCalendarId, mTargetDate);
                 } else {
                     mView.notifyUser(R.string.permission_not_granted);
                 }
                 break;
-            case REQUEST_FIND_CALENDAR:
-                if (grantResults.length > 0
-                        && PackageManager.PERMISSION_GRANTED == grantResults[0]) {
-                    findCalendar();
-                } else {
-                    mView.notifyUser(R.string.permission_not_granted);
-                }
-                break;
-        }
-    }
-
-    private class FoundCalendarSubscriber extends Subscriber<CalendarEntity> {
-
-        @Override
-        public void onCompleted() {
-            Log.v(TAG, "There are not more calendars");
-            mFindCalendarUseCase.unsubscribe();
-        }
-
-        @Override
-        public void onError(Throwable e) {
-            Log.e(TAG, e.getMessage(), e);
-            mFindCalendarUseCase.unsubscribe();
-            if (e instanceof PermissionRequiredException) {
-                String[] requiredPermissions = ((PermissionRequiredException) e).requiredPermissions;
-                mPermissionsRequestListener.onPermissionsRequired(requiredPermissions, REQUEST_FIND_CALENDAR);
-            }
-        }
-
-        @Override
-        public void onNext(CalendarEntity calendarEntity) {
-            if (calendarEntity == null) {
-                mCalendarId = -1;
-                return;
-            }
-            Log.v(TAG, "Found calendar: " + calendarEntity.toString());
-            mCalendarId = calendarEntity.id;
         }
     }
 

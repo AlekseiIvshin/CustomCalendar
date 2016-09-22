@@ -87,11 +87,6 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
         }
     };
 
-
-    public AddEventFragment() {
-        // Required empty public constructor
-    }
-
     public static AddEventFragment newInstance(long calendarId, DateTime targetDate) {
         AddEventFragment fragment = new AddEventFragment();
         Bundle args = new Bundle();

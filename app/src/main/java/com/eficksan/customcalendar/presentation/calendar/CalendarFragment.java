@@ -41,6 +41,7 @@ import rx.subjects.BehaviorSubject;
 
 public class CalendarFragment extends Fragment implements ICalendarView, PermissionsRequestListener {
     public static final String TAG = CalendarFragment.class.getSimpleName();
+    private static final String ARGS_CALENDAR_ID = "ARGS_CALENDAR_ID";
 
     PermissionsRequestListenerDelegate permissionsRequestListenerDelegate;
 
@@ -58,9 +59,12 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
         // Required empty public constructor
     }
 
-    public static CalendarFragment newInstance() {
+    public static CalendarFragment newInstance(long calendarId) {
         CalendarFragment fragment = new CalendarFragment();
+        Bundle args = new Bundle();
+        args.putLong(ARGS_CALENDAR_ID, calendarId);
         fragment.setRetainInstance(true);
+        fragment.setArguments(args);
         return fragment;
     }
 
@@ -70,6 +74,7 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
         permissionsRequestListenerDelegate = new PermissionsRequestListenerDelegate();
         setUpInjectionComponent().inject(this);
         mPresenter.takeRouter((Router) getActivity());
+        mPresenter.setCalendarId(getArguments().getLong(ARGS_CALENDAR_ID));
         mPresenter.onCreate(savedInstanceState);
 
     }

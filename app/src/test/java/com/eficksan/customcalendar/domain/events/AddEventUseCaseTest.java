@@ -44,7 +44,7 @@ public class AddEventUseCaseTest {
 
     @After
     public void tearDown() throws Exception {
-
+        useCase.unsubscribe();
     }
 
     @Test

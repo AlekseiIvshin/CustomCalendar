@@ -3,11 +3,13 @@ package com.eficksan.customcalendar.ioc.common;
 import android.content.Context;
 
 import com.eficksan.customcalendar.data.calendar.CalendarEntityMapper;
+import com.eficksan.customcalendar.data.calendar.CalendarRepository;
 import com.eficksan.customcalendar.data.calendar.EventEntityMapper;
 import com.eficksan.customcalendar.data.event.EventsRepository;
+import com.eficksan.customcalendar.domain.calendar.AddCalendarUseCase;
+import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 import com.eficksan.customcalendar.domain.events.AddEventUseCase;
 import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
-import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 
 import javax.inject.Named;
 
@@ -22,8 +24,13 @@ import rx.Scheduler;
 public class CalendarModule {
 
     @Provides
-    public EventsRepository prodiveEventsRepository(Context context) {
+    public EventsRepository provideEventsRepository(Context context) {
         return new EventsRepository(context);
+    }
+
+    @Provides
+    public CalendarRepository provideCalendarRepository(Context context) {
+        return new CalendarRepository(context);
     }
 
     @Provides
@@ -38,10 +45,16 @@ public class CalendarModule {
 
     @Provides
     public FindCalendarUseCase provideFindCalendarUserCase(
-            Context context,
-            CalendarEntityMapper mapper,
+            CalendarRepository calendarRepository,
             @Named("io") Scheduler ioScheduler, @Named("ui") Scheduler uiScheduler) {
-        return new FindCalendarUseCase(context, mapper, uiScheduler, ioScheduler);
+        return new FindCalendarUseCase(calendarRepository, uiScheduler, ioScheduler);
+    }
+
+    @Provides
+    public AddCalendarUseCase provideAddCalendarUseCase(
+            CalendarRepository calendarRepository,
+            @Named("io") Scheduler ioScheduler, @Named("ui") Scheduler uiScheduler) {
+        return new AddCalendarUseCase(calendarRepository, uiScheduler, ioScheduler);
     }
 
     @Provides

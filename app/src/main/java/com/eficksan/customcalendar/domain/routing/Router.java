@@ -5,5 +5,8 @@ package com.eficksan.customcalendar.domain.routing;
  */
 
 public interface Router {
+
     void back();
+
+    void updateCalendarIdAndShowCalendar(long calendarId);
 }

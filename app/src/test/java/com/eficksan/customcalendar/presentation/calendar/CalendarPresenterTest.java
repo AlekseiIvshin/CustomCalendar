@@ -46,24 +46,19 @@ public class CalendarPresenterTest {
     public static final CalendarEntity CALENDAR_ENTITY = new CalendarEntity(1, STUB_CALENDAR_NAME);
     public static final EventEntity EVENT_ENTITY = new EventEntity(1, 1, "", "", "", 1, 1);
     private static final int REQUEST_FETCH_EVENTS = 1;
-    private static final int REQUEST_FIND_CALENDAR = 2;
 
     CalendarPresenter presenter;
-    private FindCalendarUseCase findCalendarUseCase;
     private FetchEventsUseCase fetchEventsUseCase;
     private PermissionsRequestListener permissionRequestListener;
 
     @Before
     public void setUp() {
-        findCalendarUseCase = mock(FindCalendarUseCase.class);
         fetchEventsUseCase = mock(FetchEventsUseCase.class);
         permissionRequestListener = mock(PermissionsRequestListener.class);
 
         presenter = new CalendarPresenter(
-                findCalendarUseCase,
                 fetchEventsUseCase,
-                permissionRequestListener,
-                STUB_CALENDAR_NAME);
+                permissionRequestListener);
     }
 
     //===================== on CREATE presenter =======================//
@@ -76,20 +71,6 @@ public class CalendarPresenterTest {
         // Then
         verify(permissionRequestListener, times(1))
                 .addListener(presenter);
-    }
-
-    @Test
-    public void shouldFindCalendarWhenPresenterCreated() {
-        // Given
-        doNothing()
-                .when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
-        // When
-        presenter.onCreate(null);
-
-        // Then
-        verify(findCalendarUseCase, times(1))
-                .execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
     }
 
     //===================== on VIEW CREATED =======================//
@@ -106,6 +87,7 @@ public class CalendarPresenterTest {
                 .thenReturn(monthChangesChannel);
 
         // When
+        presenter.setCalendarId(1L);
         presenter.onCreate(null);
         presenter.onViewCreated(mockView);
 
@@ -114,6 +96,8 @@ public class CalendarPresenterTest {
                 .getSelectedDateTimeChanges();
         verify(mockView, times(1))
                 .getShownMonthChanges();
+        verify(fetchEventsUseCase, times(1))
+                .execute(any(EventsRequest.class), Matchers.<Subscriber<EventEntity>>any());
     }
 
     //===================== on DESTROY presenter =======================//
@@ -134,109 +118,7 @@ public class CalendarPresenterTest {
         presenter.onDestroy();
 
         // Then
-        verify(findCalendarUseCase, times(1))
-                .unsubscribe();
         verify(fetchEventsUseCase, times(1))
-                .unsubscribe();
-    }
-
-    //===================== FIND calendar =======================//
-
-    @Test
-    public void shouldUnsubscribeWhenCalendarFound() {
-        // Given
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onNext(CALENDAR_ENTITY);
-                ((Subscriber) arguments[1]).onCompleted();
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
-        // When
-        presenter.onCreate(null);
-
-        // Then
-        verify(findCalendarUseCase, times(1))
-                .execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-        verify(findCalendarUseCase, times(1))
-                .unsubscribe();
-    }
-
-    @Test
-    public void shouldHandlePermissionErrorWhenSearchCalendar() {
-        // Given
-        final String[] requiredPermissions = new String[]{Manifest.permission.READ_CALENDAR};
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onError(new PermissionRequiredException(requiredPermissions));
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
-        // When
-        presenter.onCreate(null);
-
-        // Then
-        verify(findCalendarUseCase, times(1))
-                .execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-        verify(findCalendarUseCase, times(1))
-                .unsubscribe();
-        verify(permissionRequestListener, times(1))
-                .onPermissionsRequired(requiredPermissions, REQUEST_FIND_CALENDAR);
-    }
-
-    @Test
-    public void shouldHandleNonPermissionErrorWhenSearchCalendar() {
-        // Given
-        final String[] requiredPermissions = new String[]{Manifest.permission.READ_CALENDAR};
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onError(new RuntimeException());
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
-        // When
-        presenter.onCreate(null);
-
-        // Then
-        verify(findCalendarUseCase, times(1))
-                .execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-        verify(findCalendarUseCase, times(1))
-                .unsubscribe();
-        verify(permissionRequestListener, times(0))
-                .onPermissionsRequired(requiredPermissions, REQUEST_FIND_CALENDAR);
-        verify(fetchEventsUseCase, times(0))
-                .execute(any(EventsRequest.class), Matchers.<Subscriber<EventEntity>>any());
-    }
-
-    @Test
-    public void shouldFetchEventsWhenCalendarFound() {
-        // Given
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onNext(CALENDAR_ENTITY);
-                ((Subscriber) arguments[1]).onCompleted();
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
-        // When
-        presenter.onCreate(null);
-
-        // Then
-        verify(findCalendarUseCase, times(1))
-                .execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-        verify(findCalendarUseCase, times(1))
                 .unsubscribe();
     }
 
@@ -257,16 +139,6 @@ public class CalendarPresenterTest {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onNext(CALENDAR_ENTITY);
-                ((Subscriber) arguments[1]).onCompleted();
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
                 ((Subscriber) arguments[1]).onNext(EVENT_ENTITY);
                 ((Subscriber) arguments[1]).onCompleted();
                 return null;
@@ -274,6 +146,7 @@ public class CalendarPresenterTest {
         }).when(fetchEventsUseCase).execute(any(EventsRequest.class), Matchers.<Subscriber<EventEntity>>any());
 
         // When
+        presenter.setCalendarId(1L);
         presenter.onCreate(null);
         presenter.onViewCreated(mockView);
 
@@ -295,16 +168,6 @@ public class CalendarPresenterTest {
         when(mockView.getShownMonthChanges())
                 .thenReturn(monthChangesChannel);
 
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onNext(CALENDAR_ENTITY);
-                ((Subscriber) arguments[1]).onCompleted();
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
         final String[] requiredPermissions = new String[]{Manifest.permission.READ_CALENDAR};
         doAnswer(new Answer() {
             @Override
@@ -316,6 +179,7 @@ public class CalendarPresenterTest {
         }).when(fetchEventsUseCase).execute(any(EventsRequest.class), Matchers.<Subscriber<EventEntity>>any());
 
         // When
+        presenter.setCalendarId(1L);
         presenter.onCreate(null);
         presenter.onViewCreated(mockView);
 
@@ -339,16 +203,6 @@ public class CalendarPresenterTest {
         when(mockView.getShownMonthChanges())
                 .thenReturn(monthChangesChannel);
 
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onNext(CALENDAR_ENTITY);
-                ((Subscriber) arguments[1]).onCompleted();
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
         final String[] requiredPermissions = new String[]{Manifest.permission.READ_CALENDAR};
         doAnswer(new Answer() {
             @Override
@@ -360,6 +214,7 @@ public class CalendarPresenterTest {
         }).when(fetchEventsUseCase).execute(any(EventsRequest.class), Matchers.<Subscriber<EventEntity>>any());
 
         // When
+        presenter.setCalendarId(1L);
         presenter.onCreate(null);
         presenter.onViewCreated(mockView);
 
@@ -375,36 +230,6 @@ public class CalendarPresenterTest {
     //==================== Permissions ================//
 
     @Test
-    public void shouldSearchCalendarWhenPermissionsGranted() {
-        // Given
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onNext(CALENDAR_ENTITY);
-                ((Subscriber) arguments[1]).onCompleted();
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-        String[] permissions = new String[] {Manifest.permission.READ_CALENDAR};
-        int[] results = new int[] {PackageManager.PERMISSION_GRANTED};
-
-        // When
-        presenter.onCreate(null);
-
-        // Then
-        verify(findCalendarUseCase, times(1))
-                .execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-
-        // When
-        presenter.onRequestPermissionsResult(REQUEST_FIND_CALENDAR, permissions, results);
-
-        // Then
-        verify(findCalendarUseCase, times(2))
-                .execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
-    }
-
-    @Test
     public void shouldSearchEventsWhenPermissionsGranted() {
         // Given
         ICalendarView mockView = mock(ICalendarView.class);
@@ -414,19 +239,11 @@ public class CalendarPresenterTest {
                 .thenReturn(dayChangesChannel);
         when(mockView.getShownMonthChanges())
                 .thenReturn(monthChangesChannel);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                ((Subscriber) arguments[1]).onNext(CALENDAR_ENTITY);
-                ((Subscriber) arguments[1]).onCompleted();
-                return null;
-            }
-        }).when(findCalendarUseCase).execute(anyString(), Matchers.<Subscriber<CalendarEntity>>any());
         String[] permissions = new String[] {Manifest.permission.READ_CALENDAR};
         int[] results = new int[] {PackageManager.PERMISSION_GRANTED};
 
         // When
+        presenter.setCalendarId(1L);
         presenter.onCreate(null);
         presenter.onViewCreated(mockView);
         // Then
@@ -439,29 +256,6 @@ public class CalendarPresenterTest {
         // Then
         verify(fetchEventsUseCase, times(2))
                 .execute(any(EventsRequest.class), Matchers.<Subscriber<EventEntity>>any());
-    }
-
-    @Test
-    public void shouldNotifyUserWhenPermissionsDeniedForCalendarRequest() {
-        // Given
-        String[] permissions = new String[] {Manifest.permission.READ_CALENDAR};
-        int[] results = new int[] {PackageManager.PERMISSION_DENIED};
-        ICalendarView mockView = mock(ICalendarView.class);
-        BehaviorSubject<DateTime> dayChangesChannel = BehaviorSubject.create(new DateTime());
-        BehaviorSubject<DateTime> monthChangesChannel = BehaviorSubject.create(new DateTime());
-        when(mockView.getSelectedDateTimeChanges())
-                .thenReturn(dayChangesChannel);
-        when(mockView.getShownMonthChanges())
-                .thenReturn(monthChangesChannel);
-
-        // When
-        presenter.onCreate(null);
-        presenter.onViewCreated(mockView);
-        presenter.onRequestPermissionsResult(REQUEST_FIND_CALENDAR, permissions, results);
-
-        // Then
-        verify(mockView, times(1))
-                .notifyUser(anyInt());
     }
 
     @Test

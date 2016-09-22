@@ -1,7 +1,7 @@
 package com.eficksan.customcalendar.presentation;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -10,8 +10,13 @@ import com.eficksan.customcalendar.R;
 import com.eficksan.customcalendar.domain.routing.Router;
 import com.eficksan.customcalendar.presentation.addingevent.AddEventFragment;
 import com.eficksan.customcalendar.presentation.calendar.CalendarFragment;
+import com.eficksan.customcalendar.presentation.splash.SplashFragment;
+
+import org.joda.time.DateTime;
 
 public class MainActivity extends AppCompatActivity implements Router {
+
+    private long mCalendarId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,7 +28,7 @@ public class MainActivity extends AppCompatActivity implements Router {
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, CalendarFragment.newInstance(), CalendarFragment.TAG)
+                    .replace(R.id.fragment_container, SplashFragment.newInstance(), SplashFragment.TAG)
                     .commit();
         }
     }
@@ -38,7 +43,9 @@ public class MainActivity extends AppCompatActivity implements Router {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_add_event:
-                AddEventFragment.newInstance().show(getSupportFragmentManager(), AddEventFragment.TAG);
+                if (mCalendarId > 0) {
+                    AddEventFragment.newInstance(mCalendarId, DateTime.now()).show(getSupportFragmentManager(), AddEventFragment.TAG);
+                }
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -46,7 +53,24 @@ public class MainActivity extends AppCompatActivity implements Router {
     }
 
     @Override
+    public void onBackPressed() {
+        if (getSupportFragmentManager().getBackStackEntryCount() <= 1) {
+            finish();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
     public void back() {
         getSupportFragmentManager().popBackStack();
+    }
+
+    @Override
+    public void updateCalendarIdAndShowCalendar(long calendarId) {
+        mCalendarId = calendarId;
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, CalendarFragment.newInstance(calendarId), CalendarFragment.TAG)
+                .commit();
     }
 }
