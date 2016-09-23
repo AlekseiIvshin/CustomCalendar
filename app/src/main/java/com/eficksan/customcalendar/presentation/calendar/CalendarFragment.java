@@ -106,7 +106,7 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
         mCalendarView.setOnDateClickListener(new FlexibleCalendarView.OnDateClickListener() {
             @Override
             public void onDateClick(int year, int month, int day) {
-                mDaysChannel.onNext(new DateTime(year, month + 1, day + 1, 0, 0));
+                mDaysChannel.onNext(new DateTime(year, month + 1, day, 0, 0));
             }
         });
 
@@ -133,7 +133,7 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
     }
 
     @Override
-    public void showMonth(int monthNumber, final ArrayList<EventEntity> events) {
+    public void showMonth(final int monthNumber, final ArrayList<EventEntity> events) {
         int calendarMonth = mCalendarView.getCurrentMonth() + 1;
         Log.v(TAG, String.format("Show month: calendar equals to %d, events received for %d, found events %d",
                 calendarMonth,
@@ -143,7 +143,7 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
             mCalendarView.setEventDataProvider(new FlexibleCalendarView.EventDataProvider() {
                 @Override
                 public List<? extends Event> getEventsForTheDay(final int year, final int month, final int day) {
-                    final DateTime start = new DateTime(year, month + 1, day, 0, 0);
+                    final DateTime start = new DateTime(year, month + 1, day, 0, 0 ,0 ,0);
                     final DateTime end = start.withHourOfDay(23).withMinuteOfHour(59);
                     return Observable.from(events)
                             .filter(new Func1<EventEntity, Boolean>() {
@@ -166,12 +166,12 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
 
     @Override
     public Observable<DateTime> getSelectedDateTimeChanges() {
-        return mMonthChannel;
+        return mDaysChannel;
     }
 
     @Override
     public Observable<DateTime> getShownMonthChanges() {
-        return mDaysChannel;
+        return mMonthChannel;
     }
 
     @Override

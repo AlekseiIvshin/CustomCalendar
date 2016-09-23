@@ -16,7 +16,7 @@ public class AddEventUseCase extends BaseUseCase<EventEntity, Long> {
 
     private final EventsRepository mEventsRepository;
 
-    public AddEventUseCase(EventsRepository eventsRepository, Scheduler jobScheduler, Scheduler uiScheduler) {
+    public AddEventUseCase(EventsRepository eventsRepository, Scheduler uiScheduler, Scheduler jobScheduler) {
         super(jobScheduler, uiScheduler);
         this.mEventsRepository = eventsRepository;
     }

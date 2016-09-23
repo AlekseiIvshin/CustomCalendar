@@ -9,6 +9,7 @@ import com.eficksan.customcalendar.data.event.EventsRepository;
 import com.eficksan.customcalendar.domain.calendar.AddCalendarUseCase;
 import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 import com.eficksan.customcalendar.domain.events.AddEventUseCase;
+import com.eficksan.customcalendar.domain.events.EventsChangesUseCase;
 import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
 
 import javax.inject.Named;
@@ -71,4 +72,10 @@ public class CalendarModule {
         return new AddEventUseCase(eventsRepository, uiScheduler, ioScheduler);
     }
 
+    @Provides
+    public EventsChangesUseCase provideEventsChangesUseCase(
+            Context context,
+            @Named("io") Scheduler ioScheduler, @Named("ui") Scheduler uiScheduler) {
+        return new EventsChangesUseCase(context, ioScheduler, uiScheduler);
+    }
 }

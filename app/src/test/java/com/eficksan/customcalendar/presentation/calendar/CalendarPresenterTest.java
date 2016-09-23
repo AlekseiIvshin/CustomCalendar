@@ -8,7 +8,6 @@ import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
 import com.eficksan.customcalendar.domain.events.EventsRequest;
 import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
-import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
 import com.eficksan.customcalendar.presentation.common.PermissionsRequestListener;
 
 import org.joda.time.DateTime;
@@ -26,9 +25,7 @@ import rx.subjects.BehaviorSubject;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -57,8 +54,8 @@ public class CalendarPresenterTest {
         permissionRequestListener = mock(PermissionsRequestListener.class);
 
         presenter = new CalendarPresenter(
-                fetchEventsUseCase,
-                permissionRequestListener);
+                mContext, fetchEventsUseCase,
+                permissionRequestListener, mEventsChangesUseCase);
     }
 
     //===================== on CREATE presenter =======================//

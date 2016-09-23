@@ -13,8 +13,10 @@ import android.support.v4.app.ActivityCompat;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
 
+import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TimeZone;
 
 import static android.provider.CalendarContract.Events.CALENDAR_ID;
 import static android.provider.CalendarContract.Events.CONTENT_URI;
@@ -23,6 +25,7 @@ import static android.provider.CalendarContract.Events.DTEND;
 import static android.provider.CalendarContract.Events.DTSTART;
 import static android.provider.CalendarContract.Events.EVENT_LOCATION;
 import static android.provider.CalendarContract.Events.TITLE;
+import static android.provider.CalendarContract.Events.EVENT_TIMEZONE;
 
 /**
  * Created by Aleksei_Ivshin on 9/22/16.
@@ -55,6 +58,7 @@ public class EventsRepository {
         values.put(DTEND, eventEntity.endAt);
         values.put(DESCRIPTION, eventEntity.description);
         values.put(CALENDAR_ID, eventEntity.calendarId);
+        values.put(EVENT_TIMEZONE, TimeZone.getDefault().toString());
         return values;
     }
 

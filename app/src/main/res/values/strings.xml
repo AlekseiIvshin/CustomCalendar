@@ -13,6 +13,6 @@
     <string name="label_event_add">Add</string>
     <string name="message_event_adding_success">Event added</string>
     <string name="message_event_adding_fail">Some error occurred during event adding.</string>
-    <string name="event_date_pattern">on dd, MMM yyyy</string>
+    <string name="event_date_pattern">dd, MMM yyyy</string>
     <string name="event_time_pattern">HH:mm</string>
 </resources>

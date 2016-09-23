@@ -3,6 +3,7 @@ package com.eficksan.customcalendar.presentation.addingevent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.eficksan.customcalendar.R;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
@@ -25,6 +26,7 @@ import rx.subscriptions.CompositeSubscription;
 
 public class AddEventPresenter extends BasePresenter<IAddEventView> implements PermissionResultListener {
 
+    private static final String TAG = AddEventPresenter.class.getSimpleName();
     public static final int REQUEST_ADD_EVENT = 1;
     private final AddEventUseCase mAddEventUseCase;
     private DateTime mTargetDate;
@@ -45,9 +47,9 @@ public class AddEventPresenter extends BasePresenter<IAddEventView> implements P
     private CompositeSubscription mViewEventSubscription;
 
     public void initPresenter(DateTime targetDate, long calendarId) {
-        mTargetDate = targetDate.withTime(0,0,0,0);
+        mTargetDate = targetDate.withTime(0, 0, 0, 0);
         mCalendarId = calendarId;
-        if (mTargetDate.isEqual(DateTime.now().withTime(0,0,0,0))) {
+        if (mTargetDate.isEqual(DateTime.now().withTime(0, 0, 0, 0))) {
             mStartTime = LocalTime.now();
         } else {
             mStartTime = new LocalTime(9, 0);
@@ -155,6 +157,7 @@ public class AddEventPresenter extends BasePresenter<IAddEventView> implements P
 
         @Override
         public void onError(Throwable e) {
+            Log.v(TAG, e.getMessage(), e);
             mAddEventUseCase.unsubscribe();
             if (e instanceof PermissionRequiredException) {
                 String[] requiredPermissions = ((PermissionRequiredException) e).requiredPermissions;
@@ -167,8 +170,8 @@ public class AddEventPresenter extends BasePresenter<IAddEventView> implements P
             if (mView != null) {
                 if (eventId > 0) {
                     mView.notifyUser(R.string.message_event_adding_success);
-                    if (mRouter!=null) {
-                        mRouter.back();
+                    if (mRouter != null) {
+                        mRouter.goBack();
                     }
                 } else {
                     mView.notifyUser(R.string.message_event_adding_fail);

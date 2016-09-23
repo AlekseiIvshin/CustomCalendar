@@ -1,6 +1,8 @@
 package com.eficksan.customcalendar.presentation;
 
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -17,6 +19,7 @@ import org.joda.time.DateTime;
 public class MainActivity extends AppCompatActivity implements Router {
 
     private long mCalendarId;
+    private DateTime mTargetDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements Router {
         switch (item.getItemId()) {
             case R.id.action_add_event:
                 if (mCalendarId > 0) {
-                    AddEventFragment.newInstance(mCalendarId, DateTime.now()).show(getSupportFragmentManager(), AddEventFragment.TAG);
+                    AddEventFragment.newInstance(mCalendarId, mTargetDate).show(getSupportFragmentManager(), AddEventFragment.TAG);
                 }
                 return true;
             default:
@@ -62,7 +65,12 @@ public class MainActivity extends AppCompatActivity implements Router {
     }
 
     @Override
-    public void back() {
+    public void goBack() {
+        Fragment addEventFragment = getSupportFragmentManager().findFragmentByTag(AddEventFragment.TAG);
+        if (addEventFragment != null && addEventFragment instanceof DialogFragment) {
+            ((DialogFragment) addEventFragment).dismiss();
+            return;
+        }
         getSupportFragmentManager().popBackStack();
     }
 
@@ -72,5 +80,10 @@ public class MainActivity extends AppCompatActivity implements Router {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, CalendarFragment.newInstance(calendarId), CalendarFragment.TAG)
                 .commit();
+    }
+
+    @Override
+    public void setSelectedDate(DateTime dateTime) {
+        mTargetDate = dateTime;
     }
 }

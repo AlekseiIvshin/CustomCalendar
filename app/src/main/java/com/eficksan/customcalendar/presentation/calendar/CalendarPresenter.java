@@ -1,13 +1,16 @@
 package com.eficksan.customcalendar.presentation.calendar;
 
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.CalendarContract.Events;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.eficksan.customcalendar.R;
 import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
+import com.eficksan.customcalendar.domain.events.EventsChangesUseCase;
 import com.eficksan.customcalendar.domain.events.FetchEventsUseCase;
 import com.eficksan.customcalendar.domain.events.MonthEventsRequest;
 import com.eficksan.customcalendar.presentation.common.BasePresenter;
@@ -36,12 +39,15 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
 
     private final FetchEventsUseCase mFetchEventsUseCase;
     private final PermissionsRequestListener mPermissionsRequestListener;
+    private final EventsChangesUseCase mEventsChangesUseCase;
 
     public CalendarPresenter(
             FetchEventsUseCase fetchEventsUseCase,
-            PermissionsRequestListener permissionsRequestListener) {
+            PermissionsRequestListener permissionsRequestListener,
+            EventsChangesUseCase eventsChangesUseCase) {
         this.mFetchEventsUseCase = fetchEventsUseCase;
         this.mPermissionsRequestListener = permissionsRequestListener;
+        mEventsChangesUseCase = eventsChangesUseCase;
     }
 
     public void setCalendarId(long calendarId) {
@@ -51,10 +57,7 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
     @Override
     public void onCreate(Bundle savedInstanceStates) {
         super.onCreate(savedInstanceStates);
-        mPermissionsRequestListener.addListener(this);
-        if (savedInstanceStates == null) {
-            mTargetDate = DateTime.now().withHourOfDay(0).withMinuteOfHour(0);
-        } else {
+        if (savedInstanceStates != null) {
             long savedLastTime = savedInstanceStates.getLong(EXTRA_LAST_SHOW_DATE);
             mTargetDate = new DateTime(savedLastTime);
         }
@@ -63,8 +66,10 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
     @Override
     public void onViewCreated(ICalendarView view) {
         super.onViewCreated(view);
+        mPermissionsRequestListener.addListener(this);
         subscribeOnViewEvents();
-//        fetchEventsForMonth(mCalendarId, mTargetDate);
+        fetchEventsForMonth(mCalendarId, mTargetDate);
+        mEventsChangesUseCase.execute(Events.CONTENT_URI, new EventChangesSubscriber());
     }
 
     @Override
@@ -75,17 +80,13 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
 
     @Override
     public void onViewDestroyed() {
+        mEventsChangesUseCase.unsubscribe();
+        mPermissionsRequestListener.removeListener(this);
+        mFetchEventsUseCase.unsubscribe();
         mViewEventsSubscription.unsubscribe();
         mViewEventsSubscription.clear();
         mViewEventsSubscription = null;
         super.onViewDestroyed();
-    }
-
-    @Override
-    public void onDestroy() {
-        mPermissionsRequestListener.removeListener(this);
-        mFetchEventsUseCase.unsubscribe();
-        super.onDestroy();
     }
 
     private void subscribeOnViewEvents() {
@@ -95,9 +96,13 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
                 .subscribe(new Action1<DateTime>() {
                     @Override
                     public void call(DateTime dateTime) {
-                        mTargetDate = dateTime;
-                        if (mCalendarId > 0) {
-                            fetchEventsForMonth(mCalendarId, mTargetDate);
+                        Log.v(TAG, "On month changes " + dateTime);
+                        Log.v(TAG, "Current month date " + mTargetDate);
+                        if (mTargetDate == null || mTargetDate.getMonthOfYear() != dateTime.getMonthOfYear()) {
+                            mTargetDate = dateTime;
+                            if (mCalendarId > 0) {
+                                fetchEventsForMonth(mCalendarId, mTargetDate);
+                            }
                         }
                     }
                 }));
@@ -106,9 +111,9 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
                 .subscribe(new Action1<DateTime>() {
                     @Override
                     public void call(DateTime dateTime) {
-                        if (mView != null) {
-                            mTargetDate = dateTime;
-                        }
+                        Log.v(TAG, "On date changes " + dateTime);
+                        mTargetDate = dateTime;
+                        mRouter.setSelectedDate(dateTime);
                     }
                 }));
     }
@@ -168,6 +173,25 @@ public class CalendarPresenter extends BasePresenter<ICalendarView> implements P
         public void onNext(EventEntity eventEntity) {
             Log.v(TAG, "Found event: " + eventEntity.toString());
             eventEntities.add(eventEntity);
+        }
+    }
+
+    private class EventChangesSubscriber extends Subscriber<Uri> {
+
+        @Override
+        public void onCompleted() {
+            mEventsChangesUseCase.unsubscribe();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            mEventsChangesUseCase.unsubscribe();
+            Log.e(TAG, e.getMessage(), e);
+        }
+
+        @Override
+        public void onNext(Uri uri) {
+            fetchEventsForMonth(mCalendarId, mTargetDate);
         }
     }
 }
