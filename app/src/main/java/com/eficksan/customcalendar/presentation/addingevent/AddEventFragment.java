@@ -70,19 +70,32 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
 
     private BehaviorSubject<LocalTime> mStartTimeChannel;
     private BehaviorSubject<LocalTime> mEndTimeChannel;
+
     private TimePickerDialog.OnTimeSetListener mStartTimeChangesCallback = new TimePickerDialog.OnTimeSetListener() {
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-            if (mStartTimeChannel!=null) {
-                mStartTimeChannel.onNext(new LocalTime(hourOfDay, minute));
+            if (mStartTimeChannel != null) {
+                LocalTime startTime = new LocalTime(hourOfDay, minute);
+                updateStartTime(startTime);
+                LocalTime endTime = mEndTimeChannel.getValue();
+                if (endTime.isBefore(startTime)) {
+                    updateEndTime(startTime.plusMinutes(30));
+                }
             }
         }
     };
+
+
     private TimePickerDialog.OnTimeSetListener mEndTimeChangesCallback = new TimePickerDialog.OnTimeSetListener() {
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-            if (mEndTimeChannel!=null) {
-                mEndTimeChannel.onNext(new LocalTime(hourOfDay, minute));
+            if (mEndTimeChannel != null) {
+                LocalTime endTime = new LocalTime(hourOfDay, minute);
+                updateEndTime(endTime);
+                LocalTime startTime = mStartTimeChannel.getValue();
+                if (startTime.isAfter(endTime)) {
+                    updateStartTime(endTime);
+                }
             }
         }
     };
@@ -106,7 +119,7 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
         long targetDate = getArguments().getLong(ARGS_TARGET_DATE);
         long calendarId = getArguments().getLong(ARGS_CALENDAR_ID);
 
-        mPresenter.initPresenter(new DateTime(targetDate),calendarId);
+        mPresenter.initPresenter(new DateTime(targetDate), calendarId);
         mPresenter.onCreate(savedInstanceState);
     }
 
@@ -175,10 +188,10 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
         return mInjectorComponent;
     }
 
-
     public void removeInjectionComponent() {
         mInjectorComponent = null;
     }
+
 
     @Override
     public void init(DateTime eventDate, LocalTime startTime, LocalTime endTime) {
@@ -193,7 +206,8 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
             @Override
             public void call(Void aVoid) {
                 LocalTime time = mStartTimeChannel.getValue();
-                new TimePickerDialog(getActivity(), mStartTimeChangesCallback, time.getHourOfDay(), time.getMinuteOfHour(), true);
+                new TimePickerDialog(getActivity(), mStartTimeChangesCallback, time.getHourOfDay(), time.getMinuteOfHour(), true).show();
+                ;
             }
         });
 
@@ -201,7 +215,7 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
             @Override
             public void call(Void aVoid) {
                 LocalTime time = mEndTimeChannel.getValue();
-                new TimePickerDialog(getActivity(), mEndTimeChangesCallback, time.getHourOfDay(), time.getMinuteOfHour(), true);
+                new TimePickerDialog(getActivity(), mEndTimeChangesCallback, time.getHourOfDay(), time.getMinuteOfHour(), true).show();
             }
         });
     }
@@ -257,5 +271,15 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
     @Override
     public void notifyUser(@StringRes int messageResId) {
         Toast.makeText(getActivity(), messageResId, Toast.LENGTH_LONG).show();
+    }
+
+    private void updateStartTime(LocalTime startTime) {
+        mStartTime.setText(startTime.toString(getString(R.string.event_time_pattern)));
+        mStartTimeChannel.onNext(startTime);
+    }
+
+    private void updateEndTime(LocalTime endTime) {
+        mEndTime.setText(endTime.toString(getString(R.string.event_time_pattern)));
+        mEndTimeChannel.onNext(endTime);
     }
 }
