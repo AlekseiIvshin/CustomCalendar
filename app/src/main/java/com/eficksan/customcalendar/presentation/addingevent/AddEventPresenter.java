@@ -6,7 +6,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.eficksan.customcalendar.R;
-import com.eficksan.customcalendar.data.calendar.EventEntity;
+import com.eficksan.customcalendar.data.event.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
 import com.eficksan.customcalendar.domain.events.AddEventUseCase;
 import com.eficksan.customcalendar.presentation.common.BasePresenter;

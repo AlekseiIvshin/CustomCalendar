@@ -18,6 +18,7 @@ import org.joda.time.DateTime;
 
 public class MainActivity extends AppCompatActivity implements Router {
 
+    private static final String KEY_CALENDAR_ID = "KEY_CALENDAR_ID";
     private long mCalendarId;
     private DateTime mTargetDate;
 
@@ -33,6 +34,8 @@ public class MainActivity extends AppCompatActivity implements Router {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, SplashFragment.newInstance(), SplashFragment.TAG)
                     .commit();
+        } else {
+            mCalendarId = savedInstanceState.getLong(KEY_CALENDAR_ID, 0);
         }
     }
 
@@ -40,6 +43,12 @@ public class MainActivity extends AppCompatActivity implements Router {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.toolbar, menu);
         return true;
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong(KEY_CALENDAR_ID, mCalendarId);
     }
 
     @Override

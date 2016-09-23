@@ -5,7 +5,7 @@ import android.content.pm.PackageManager;
 import android.os.RemoteException;
 
 import com.eficksan.customcalendar.R;
-import com.eficksan.customcalendar.data.calendar.EventEntity;
+import com.eficksan.customcalendar.data.event.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
 import com.eficksan.customcalendar.domain.events.AddEventUseCase;
 import com.eficksan.customcalendar.presentation.common.PermissionsRequestListener;
@@ -26,7 +26,6 @@ import rx.subjects.PublishSubject;
 
 import static com.eficksan.customcalendar.presentation.addingevent.AddEventPresenter.REQUEST_ADD_EVENT;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;

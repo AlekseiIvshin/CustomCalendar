@@ -1,4 +1,4 @@
-package com.eficksan.customcalendar.data.calendar;
+package com.eficksan.customcalendar.data.event;
 
 /**
  * Created by Aleksei_Ivshin on 9/20/16.

@@ -10,10 +10,8 @@ import android.net.Uri;
 import android.provider.CalendarContract;
 import android.support.v4.app.ActivityCompat;
 
-import com.eficksan.customcalendar.data.calendar.EventEntity;
 import com.eficksan.customcalendar.domain.PermissionRequiredException;
 
-import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
@@ -91,6 +89,7 @@ public class EventsRepository {
             while (cursor.moveToNext()) {
                 eventEntities.add(mapToObject(cursor));
             }
+            cursor.close();
         }
         return eventEntities;
     }

@@ -2,7 +2,7 @@ package com.eficksan.customcalendar.presentation.calendar;
 
 import android.support.annotation.StringRes;
 
-import com.eficksan.customcalendar.data.calendar.EventEntity;
+import com.eficksan.customcalendar.data.event.EventEntity;
 
 import org.joda.time.DateTime;
 

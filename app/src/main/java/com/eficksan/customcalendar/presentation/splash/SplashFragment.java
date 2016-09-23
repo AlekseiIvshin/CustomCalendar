@@ -43,7 +43,6 @@ public class SplashFragment extends Fragment implements ISplashView, Permissions
         super.onCreate(savedInstanceState);
         permissionsRequestListenerDelegate = new PermissionsRequestListenerDelegate();
         setUpInjectionComponent().inject(this);
-        mPresenter.takeRouter((Router) getActivity());
         mPresenter.onCreate(savedInstanceState);
     }
 
@@ -57,18 +56,19 @@ public class SplashFragment extends Fragment implements ISplashView, Permissions
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        mPresenter.takeRouter((Router) getActivity());
         mPresenter.onViewCreated(this);
     }
 
     @Override
     public void onDestroyView() {
         mPresenter.onViewDestroyed();
+        mPresenter.releaseRouter();
         super.onDestroyView();
     }
 
     @Override
     public void onDestroy() {
-        mPresenter.releaseRouter();
         mPresenter.onDestroy();
         removeInjectionComponent();
         super.onDestroy();

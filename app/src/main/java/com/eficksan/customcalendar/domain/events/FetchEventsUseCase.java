@@ -2,13 +2,12 @@ package com.eficksan.customcalendar.domain.events;
 
 import android.util.Log;
 
-import com.eficksan.customcalendar.data.calendar.EventEntity;
+import com.eficksan.customcalendar.data.event.EventEntity;
 import com.eficksan.customcalendar.data.event.EventsRepository;
 import com.eficksan.customcalendar.domain.common.BaseUseCase;
 
 import rx.Observable;
 import rx.Scheduler;
-import rx.functions.Action0;
 import rx.functions.Func1;
 
 /**

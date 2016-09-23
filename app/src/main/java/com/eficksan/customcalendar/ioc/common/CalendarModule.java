@@ -2,9 +2,7 @@ package com.eficksan.customcalendar.ioc.common;
 
 import android.content.Context;
 
-import com.eficksan.customcalendar.data.calendar.CalendarEntityMapper;
 import com.eficksan.customcalendar.data.calendar.CalendarRepository;
-import com.eficksan.customcalendar.data.calendar.EventEntityMapper;
 import com.eficksan.customcalendar.data.event.EventsRepository;
 import com.eficksan.customcalendar.domain.calendar.AddCalendarUseCase;
 import com.eficksan.customcalendar.domain.calendar.FindCalendarUseCase;
@@ -32,16 +30,6 @@ public class CalendarModule {
     @Provides
     public CalendarRepository provideCalendarRepository(Context context) {
         return new CalendarRepository(context);
-    }
-
-    @Provides
-    public EventEntityMapper provideEntityMapper() {
-        return new EventEntityMapper();
-    }
-
-    @Provides
-    public CalendarEntityMapper provideCalendarMapper() {
-        return new CalendarEntityMapper();
     }
 
     @Provides

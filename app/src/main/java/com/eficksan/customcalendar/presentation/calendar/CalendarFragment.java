@@ -13,7 +13,7 @@ import android.widget.Toast;
 
 import com.eficksan.customcalendar.App;
 import com.eficksan.customcalendar.R;
-import com.eficksan.customcalendar.data.calendar.EventEntity;
+import com.eficksan.customcalendar.data.event.EventEntity;
 import com.eficksan.customcalendar.domain.routing.Router;
 import com.eficksan.customcalendar.ioc.calendar.CalendarScreenComponent;
 import com.eficksan.customcalendar.ioc.calendar.CalendarScreenModule;
@@ -28,7 +28,6 @@ import com.p_v.flexiblecalendar.entity.Event;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -73,7 +72,6 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
         super.onCreate(savedInstanceState);
         permissionsRequestListenerDelegate = new PermissionsRequestListenerDelegate();
         setUpInjectionComponent().inject(this);
-        mPresenter.takeRouter((Router) getActivity());
         mPresenter.setCalendarId(getArguments().getLong(ARGS_CALENDAR_ID));
         mPresenter.onCreate(savedInstanceState);
 
@@ -90,6 +88,8 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.bind(this, view);
+
+        mPresenter.takeRouter((Router) getActivity());
 
         DateTime currentDate = DateTime.now().withHourOfDay(0).withMinuteOfHour(0);
 
@@ -121,12 +121,12 @@ public class CalendarFragment extends Fragment implements ICalendarView, Permiss
         mDaysChannel.onCompleted();
         mPresenter.onViewDestroyed();
         ButterKnife.unbind(this);
+        mPresenter.releaseRouter();
         super.onDestroyView();
     }
 
     @Override
     public void onDestroy() {
-        mPresenter.releaseRouter();
         mPresenter.onDestroy();
         removeInjectionComponent();
         super.onDestroy();

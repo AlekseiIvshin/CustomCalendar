@@ -102,7 +102,6 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
         super.onCreate(savedInstanceState);
         permissionsRequestListenerDelegate = new PermissionsRequestListenerDelegate();
         setUpInjectionComponent().inject(this);
-        mPresenter.takeRouter((Router) getActivity());
 
         long targetDate = getArguments().getLong(ARGS_TARGET_DATE);
         long calendarId = getArguments().getLong(ARGS_CALENDAR_ID);
@@ -122,6 +121,7 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.bind(this, view);
+        mPresenter.takeRouter((Router) getActivity());
 
         mPresenter.onViewCreated(this);
     }
@@ -129,12 +129,12 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
     @Override
     public void onDestroyView() {
         mPresenter.onViewDestroyed();
+        mPresenter.releaseRouter();
         super.onDestroyView();
     }
 
     @Override
     public void onDestroy() {
-        mPresenter.releaseRouter();
         mPresenter.onDestroy();
         removeInjectionComponent();
         super.onDestroy();
