@@ -55,9 +55,7 @@ public class MainActivity extends AppCompatActivity implements Router {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_add_event:
-                if (mCalendarId > 0) {
-                    AddEventFragment.newInstance(mCalendarId, mTargetDate).show(getSupportFragmentManager(), AddEventFragment.TAG);
-                }
+                AddEventFragment.newInstance(mCalendarId, mTargetDate).show(getSupportFragmentManager(), AddEventFragment.TAG);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

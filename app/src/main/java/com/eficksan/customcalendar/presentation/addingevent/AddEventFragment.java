@@ -1,5 +1,6 @@
 package com.eficksan.customcalendar.presentation.addingevent;
 
+import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -106,13 +107,13 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
         args.putLong(ARGS_TARGET_DATE, targetDate.getMillis());
         args.putLong(ARGS_CALENDAR_ID, calendarId);
         fragment.setArguments(args);
-        fragment.setRetainInstance(true);
         return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRetainInstance(true);
         permissionsRequestListenerDelegate = new PermissionsRequestListenerDelegate();
         setUpInjectionComponent().inject(this);
 
@@ -143,6 +144,10 @@ public class AddEventFragment extends DialogFragment implements PermissionsReque
     public void onDestroyView() {
         mPresenter.onViewDestroyed();
         mPresenter.releaseRouter();
+        Dialog dialog = getDialog();
+        if (dialog != null && getRetainInstance()) {
+            dialog.setDismissMessage(null);
+        }
         super.onDestroyView();
     }
 
